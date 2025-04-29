@@ -42,7 +42,7 @@ return {
     require("markview").setup({
       markdown_inline = {
         enable = true,
-        heckboxes = presets.checkboxes.nerd,
+        checkboxes = presets.checkboxes.nerd,
         hyperlinks = generic_hl("MarkviewHyperlink"),
         uri_autolinks = generic_hl("MarkviewEmail"),
       },
