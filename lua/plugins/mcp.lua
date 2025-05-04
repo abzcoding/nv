@@ -13,10 +13,15 @@ return {
       config = vim.fn.expand("~/.mcpservers.json"),
       shutdown_delay = 0,
       log = {
-        level = vim.log.levels.WARN,
+        level = vim.log.levels.ERROR,
         to_file = false,
         file_path = nil,
         prefix = "MCPHub",
+      },
+      extensions = {
+        avante = {
+          make_slash_commands = true,
+        },
       },
     })
   end,
