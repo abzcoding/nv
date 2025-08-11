@@ -75,8 +75,8 @@ map("i", "jk", "<ESC>:w<CR>", opts)
 
 -- buffers
 map("n", "X", ":bdelete!<CR>", opts)
-map("n", "L", ":bnext<CR>", opts)
-map("n", "H", ":bprev<CR>", opts)
+map("n", "L", ":BufferLineCycleNext<CR>", opts)
+map("n", "H", ":BufferLineCyclePrev<CR>", opts)
 map("n", "gl", vim.diagnostic.open_float, opts)
 map("n", ";p", '"0p', opts)
 map("n", ";c", '"_c', opts)
