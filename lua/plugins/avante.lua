@@ -57,7 +57,8 @@ return {
         providers = {
           copilot = {
             endpoint = "https://api.githubcopilot.com",
-            model = "claude-sonnet-4",
+            -- model = "claude-sonnet-4",
+            model = "gpt-5",
             proxy = nil,
             allow_insecure = false,
             timeout = 60000,
