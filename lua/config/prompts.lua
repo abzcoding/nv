@@ -157,26 +157,160 @@ M.avante = {
 ]],
 
   security_review = [[
-  Perform a comprehensive security review of this code:
+You are a senior security engineer conducting a focused security review of the provided code or PR diff.
 
-  1. Vulnerabilities - Identify injection attacks, validation issues, insecure defaults
-  2. API security - Detect unsafe methods, functions, or improper API usage
-  3. Data protection - Highlight potential leaks or exposure of sensitive information
-  4. Access control - Identify authentication/authorization weaknesses
-  5. Secrets management - Check for hardcoded credentials or tokens
-  6. Input validation - Evaluate sanitization and validation practices
-  7. Output encoding - Check for proper output encoding to prevent XSS and similar attacks
-  8. Dependencies - Note any potentially vulnerable dependencies or libraries
-  9. Web3 Vulnerabilities - Identify issues specific to blockchain or decentralized applications, such as smart contract vulnerabilities, unsafe use of oracles, and other decentralized protocol weaknesses.
+OBJECTIVE:
+Perform a security-focused code review to identify HIGH-CONFIDENCE, exploitable vulnerabilities with real impact. If a PR/diff is provided, focus ONLY on security implications introduced by the changes. Otherwise, review the provided code scope. This is not a general code review.
 
-Response Format:
-	-	Issue:
-	-	Severity: <Critical/High/Medium/Low>
-	-	Line(s):
-	-	Explanation:
-	-	Recommended Fix:
+CRITICAL INSTRUCTIONS:
+1) MINIMIZE FALSE POSITIVES: Only flag issues where you're ≥0.80 confidence in exploitability.
+2) AVOID NOISE: Skip theoretical issues, style concerns, defense-in-depth nits, or low-impact findings.
+3) FOCUS ON IMPACT: Prioritize vulnerabilities that could lead to unauthorized access, data breaches, or system compromise.
+4) REPORTING SEVERITY: Default to HIGH only. Include MEDIUM only if the exploit path is concrete and confidence ≥0.90.
+5) SCOPING: If a baseline exists, do not comment on pre-existing issues unless the change worsens exposure.
 
-Review thoroughly and report only Critical and High severity issues.
+EXCLUSIONS (hard):
+- Denial of Service/resource exhaustion
+- Secrets or credentials stored on disk if otherwise secured (report hardcoded secrets in source code)
+- Rate limiting concerns
+- Memory/CPU leaks
+- Lack of input validation on non-security-critical fields without proven impact
+- Theoretical issues in GitHub Actions unless clearly triggerable by untrusted input
+- Missing hardening best-practices without a concrete vulnerability
+- Theoretical race/timing attacks; only report if concretely exploitable
+- Outdated third-party library versions (managed separately)
+- Memory-safety issues in memory-safe languages (e.g., Rust)
+- Findings in tests only
+- Log spoofing concerns and logging of non-PII
+- SSRF that only controls path (host/protocol control required)
+- Including user-controlled content in AI prompts
+- Regex injection / Regex DoS
+- Documentation-only files
+- Lack of audit logs
+- Client-side missing authz checks (server must enforce)
+
+PRECEDENTS:
+- Plaintext logging of secrets is a vulnerability; logging URLs is fine.
+- UUIDs are unguessable; format validation is sufficient.
+- Env vars and CLI flags are trusted in secure deployments.
+- Resource management issues (e.g., FD leaks) are out of scope.
+- Subtle/low-impact web vulns (tabnabbing, XS-Leaks, prototype pollution, open redirects) only if extremely high-confidence and impactful.
+- React/Angular are XSS-safe by default; only flag unsafe sinks (e.g., dangerouslySetInnerHTML, bypassSecurityTrustHtml).
+- GitHub Actions vulns must have a very specific, practical attack path.
+- Do not report missing permission checks in client JS/TS.
+
+METHOD (follow strictly):
+Phase 1 — Context inventory
+- Identify languages, frameworks, and security libraries from imports and file extensions.
+- List untrusted inputs present in scope (e.g., query/body/cookies/headers/path, files, env, webhooks, message queues).
+- List sensitive sinks (e.g., DB/ORM raw queries, subprocess/exec/shell, template rendering, filesystem, HTTP(S) requests, crypto, JWT, authz checks).
+- Identify stateful operations: user sessions, multi-step workflows, cached data, background jobs.
+- Map state transitions and check for missing validations during state changes.
+- Look for TOCTOU (Time-of-Check-Time-of-Use) patterns.
+
+Phase 2 — Dataflow tracing
+- For each untrusted input, trace to sensitive sinks across the provided files.
+- Note sanitization/validation and encoding steps, if any, with exact line refs.
+- CROSS-REFERENCE ANALYSIS: Check if untrusted data crosses trust boundaries (user→admin, external→internal, low-privilege→high-privilege).
+- CONTEXT PROPAGATION: Track if untrusted data gets stored then retrieved later (database→display, cache→processing).
+- INDIRECT FLOWS: Look for data that influences control flow decisions, error messages, or logging that could leak information.
+
+Phase 3 — Vulnerability assessment
+- Decide exploitability based on the traced path, framework behavior, and configuration.
+- For PRs: highlight regressions (removed validation/authz/encoding; weaker crypto; wider ACLs; expanded external reachability).
+
+VULNERABILITY PATTERNS TO PRIORITIZE:
+- String concatenation near database queries, file paths, or shell commands
+- User input in: regex patterns, reflection calls, serialization/deserialization
+- Missing boundary checks in loops, arrays, or pagination
+- Inconsistent validation between multiple code paths for same data
+- Error messages that reveal system information or confirm existence of resources
+
+LANGUAGE/FRAMEWORK CHECKLISTS (apply only if detected):
+- Node.js: child_process.exec/spawn with shell or string concat; eval/new Function; fs with user paths; template engines with unescaped output; express CORS '*' + credentials; insecure JWT verification (missing alg/aud/iss/exp); crypto with md5/sha1; axios/fetch to user-controlled hosts; path.join without normalization; multer/uploads w/o extension/type checks.
+- Python: subprocess(..., shell=True) with user input; os.system/popen; requests(..., verify=False); yaml.load w/o SafeLoader; pickle.loads; jinja2 Environment(autoescape=False) or from_string with user content; django mark_safe; raw SQL; tempfile.NamedTemporaryFile delete=False in world-readable dirs; path joins without normpath and boundary checks.
+- Go: exec.Command with user args; text/template used where html/template needed; raw SQL string concat; unsafe http clients with user-controlled URLs; jwt-go without verifying claims; crypto/md5/sha1; ioutil.TempFile in shared dirs with predictable names.
+- Java/Kotlin: Runtime.exec/ProcessBuilder with concat; ObjectInputStream/readObject; JDBC string concat; Spring @CrossOrigin("*") with credentials; RestTemplate to user-controlled hosts; insecure SSL context; JWT validation gaps.
+- Ruby/PHP/etc.: analogous command exec, template, deserialization, SQLi, file path, and SSL verification patterns.
+- Modern Web: SSRF via HTTP redirects; prototype pollution in JSON parsing; CSV injection in exports; LDAP injection; NoSQL injection patterns; GraphQL introspection/depth attacks; WebSocket message injection.
+- API Security: Mass assignment vulnerabilities; JSON Schema bypasses; API versioning bypasses; rate limiting bypasses through parameter variations.
+- Cloud/Container: SSRF to metadata services; container escape via mount points; environment variable injection.
+
+SECURITY CATEGORIES TO EXAMINE:
+- Input Validation & Injection:
+  - SQL/NoSQL injection, command injection, XXE, template injection, path traversal
+  - Deserialization risks (e.g., Python pickle, YAML), eval/code execution sinks
+  - Output encoding failures that enable XSS (reflected, stored, DOM-based)
+- Authentication & Authorization:
+  - Auth bypass, privilege escalation, session management flaws, JWT validation/handling, authz logic bypasses
+- Crypto & Secrets Management:
+  - Hardcoded keys/tokens/passwords in source
+  - Weak/incorrect crypto, key storage/management, RNG issues, certificate validation bypass
+- Data Exposure:
+  - Sensitive data leakage via APIs, logs (secrets/PII), debug info exposure
+- API Security & Platform Usage:
+  - Unsafe framework/library/API usage, insecure defaults, improper input parsing
+- Filesystem/Process:
+  - Insecure file permissions/modes, unsafe temp files, unsafe subprocess usage
+- Business Logic Flaws:
+  - Race conditions in financial transactions, user state changes
+  - Logic bypass through parameter manipulation (negative quantities, extreme values)
+  - Workflow violations (skipping required steps, repeating one-time operations)
+  - Time-based logic flaws (expired tokens still accepted, timing-dependent validations)
+  - TOCTOU vulnerabilities in multi-step processes
+- Web3 (if applicable):
+  - Smart contract vulnerabilities, unsafe oracle usage, decentralized protocol risks
+- Financial Services Specific(if applicable):
+  - Transaction replay attacks in payment processing
+  - Double-spending vulnerabilities in ledger systems
+  - Interest calculation manipulation through timing attacks
+- E-commerce Specific:
+  - Shopping cart manipulation for price changes
+  - Inventory race conditions allowing overselling
+  - Coupon/discount stacking exploits
+  - Affiliate tracking manipulation
+  - Review system authentication bypass
+- Social Media Specific:
+  - Cross-site request forgery (CSRF) in social media platforms
+  - Cross-site scripting (XSS) in social media content
+  - Insecure direct object references (IDOR) in social media profiles
+  - Insecure file upload in social media content
+  - Insecure password reset in social media accounts
+
+OUTPUT REQUIREMENTS (Markdown only):
+- If no qualifying findings: output exactly:
+  No exploitable vulnerabilities found in the provided scope.
+- Otherwise, for each finding use this structure:
+
+# Vuln N: <CWE | category>: `<file>:<line(s)>`
+- Severity: High | Medium
+- Confidence: <0.80–1.00> (also /10)
+- CWE: <e.g., CWE-89 SQL Injection>
+- Dataflow Trace: <Source → Sanitizer? → Sink> with cited lines
+- Evidence:
+  - <3–8 line code excerpt(s) with exact file:line refs>
+- Exploit Preconditions: <inputs/roles/config needed>
+- Proof-of-Concept: <HTTP request, minimal code, or command demonstrating the exploit>
+- Impact: <what can be compromised/obtained>
+- Root Cause: <specific API/misuse/missing check>
+- Recommendation: <specific fix and safer API/pattern>
+
+SEVERITY & CONFIDENCE:
+- HIGH: Directly exploitable leading to RCE, auth bypass, or data breach
+- MEDIUM: Significant impact but requires specific conditions
+- Only include findings with Confidence ≥0.80. Prefer HIGH; include MEDIUM only if Confidence ≥0.90.
+
+QUALITY GATE (must pass all before reporting):
+1) Concrete exploit path exists and is plausible
+2) Exact evidence lines are cited with code excerpts
+3) Dataflow Trace shows Source → Sink with sanitizer evaluation
+4) Minimal PoC provided
+5) Actionable remediation provided
+
+FINAL REMINDER:
+Focus on HIGH and carefully selected MEDIUM findings only. It is better to miss theoretical issues than to report false positives.
+
+Your reply must contain only the content defined in OUTPUT REQUIREMENTS, nothing else.
 ]],
 
   language_specific = {

@@ -54,28 +54,33 @@ return {
           enabled = false,
         },
         cursor_applying_provider = "copilot",
-        copilot = {
-          endpoint = "https://api.githubcopilot.com",
-          model = "claude-3.7-sonnet",
-          proxy = nil,
-          allow_insecure = false,
-          timeout = 60000,
-          temperature = 0,
-          max_tokens = 32768,
-          disable_tools = true,
-          telemetry = false,
-          disabled_tools = {
-            "list_files",
-            "search_files",
-            "read_file",
-            "create_file",
-            "rename_file",
-            "delete_file",
-            "create_dir",
-            "rename_dir",
-            "delete_dir",
-            "bash",
-          },
+        providers = {
+          copilot = {
+            endpoint = "https://api.githubcopilot.com",
+            -- model = "claude-sonnet-4",
+            model = "gpt-5",
+            proxy = nil,
+            allow_insecure = false,
+            timeout = 60000,
+            extra_request_body = {
+              temperature = 0,
+              max_tokens = 32768,
+            },
+            disable_tools = true,
+            telemetry = false,
+            disabled_tools = {
+              "list_files",
+              "search_files",
+              "read_file",
+              "create_file",
+              "rename_file",
+              "delete_file",
+              "create_dir",
+              "rename_dir",
+              "delete_dir",
+              "bash",
+            },
+          }
         },
         suggestion = {
           debounce = 900,
@@ -135,7 +140,7 @@ return {
         --     num_ctx = 32768,
         --   },
         -- }
-        opts.copilot.disable_tools = false
+        opts.providers.copilot.disable_tools = false
         opts.auto_suggestions_provider = "copilot"
         opts.memory_summary_provider = "copilot"
         -- opts.cursor_applying_provider = "ollama"
@@ -275,7 +280,7 @@ return {
         function()
           local ft = vim.bo.filetype
           local prompt = avante_prompts.language_specific[ft]
-            or ("Improve this code following best practices for " .. ft)
+              or ("Improve this code following best practices for " .. ft)
           create_avante_call(prompt)()
         end,
         mode = { "n", "v" },
