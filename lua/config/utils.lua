@@ -204,4 +204,18 @@ M.is_mcp_present = function()
   return false
 end
 
+M.is_online = function()
+  if vim.env.NVIM_OFFLINE == "1" then
+    return false
+  end
+  local hosts_to_try = { "api.github.com" }
+  for _, host in ipairs(hosts_to_try) do
+    local ok, res = pcall(vim.loop.getaddrinfo, host, nil, { socktype = "stream" })
+    if ok and res and #res > 0 then
+      return true
+    end
+  end
+  return false
+end
+
 return M

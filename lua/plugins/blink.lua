@@ -1,8 +1,11 @@
+local is_online = require("config.utils").is_online
+
 return {
   "saghen/blink.cmp",
   dependencies = {
     {
       "giuxtaposition/blink-cmp-copilot",
+      enabled = is_online,
     },
   },
   opts = function(_, opts)
@@ -31,11 +34,19 @@ return {
       default = function(_)
         local success, node = pcall(vim.treesitter.get_node)
         if vim.bo.filetype == "lua" then
-          return { "lazydev", "lsp", "path", "copilot" }
+          local src = { "lazydev", "lsp", "path" }
+          if is_online() then
+            table.insert(src, "copilot")
+          end
+          return src
         elseif success and node and vim.tbl_contains({ "comment", "line_comment", "block_comment" }, node:type()) then
           return { "buffer" }
         else
-          return { "lsp", "path", "snippets", "buffer", "copilot" }
+          local src = { "lsp", "path", "snippets", "buffer" }
+          if is_online() then
+            table.insert(src, "copilot")
+          end
+          return src
         end
       end,
       providers = {
@@ -77,7 +88,7 @@ return {
         },
         copilot = {
           name = "copilot",
-          enabled = true,
+          enabled = is_online(),
           module = "blink-cmp-copilot",
           kind = "Copilot",
           min_keyword_length = 5,

@@ -1,4 +1,5 @@
 local avante_prompts = require("config.prompts").avante
+local is_online = require("config.utils").is_online
 local function create_avante_call(prompt, use_context)
   if use_context then
     local filetype = vim.bo.filetype ~= "" and vim.bo.filetype or "unknown"
@@ -20,6 +21,7 @@ return {
     "zbirenbaum/copilot.lua",
     cmd = "Copilot",
     event = "InsertEnter",
+    enabled = is_online,
     config = function()
       require("copilot").setup({
         filetypes = {
@@ -47,6 +49,7 @@ return {
     "yetone/avante.nvim",
     -- event = "BufReadPost",
     version = false,
+    enabled = is_online,
     opts = function()
       local opts = {
         provider = "copilot",
@@ -80,7 +83,7 @@ return {
               "delete_dir",
               "bash",
             },
-          }
+          },
         },
         suggestion = {
           debounce = 900,
@@ -280,7 +283,7 @@ return {
         function()
           local ft = vim.bo.filetype
           local prompt = avante_prompts.language_specific[ft]
-              or ("Improve this code following best practices for " .. ft)
+            or ("Improve this code following best practices for " .. ft)
           create_avante_call(prompt)()
         end,
         mode = { "n", "v" },
