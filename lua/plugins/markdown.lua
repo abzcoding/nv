@@ -181,6 +181,13 @@ local reference_definitions = {
     icon = " ",
     hl = "MarkviewPalette6Fg",
   },
+  ["kubernetes%.io/[%a%d%-%_%.]+"] = {
+    --- kubernetes.io/<stuff>
+    priority = -9999,
+
+    icon = "⎈ ",
+    hl = "MarkviewPalette6Fg",
+  },
 }
 
 return {
