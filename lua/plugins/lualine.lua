@@ -448,23 +448,15 @@ return {
       }
       table.insert(opts.sections.lualine_y, 3, {
         function()
-          local clients = package.loaded["copilot"] and LazyVim.lsp.get_clients({ name = "copilot", bufnr = 0 }) or {}
-          if #clients > 0 then
-            if not copilot_status then
-              copilot_status_ok, copilot_status = pcall(require, "copilot.status")
-            end
-            if copilot_status_ok then
-              local status = copilot_status.data.status
-              return (status == "InProgress" and "󰔟")
-                or (status == "Warning" and "")
-                or LazyVim.config.icons.kinds.Copilot
-            end
+          local status = require("sidekick.status").get()
+          if status.kind == "Normal" then
+            return LazyVim.config.icons.kinds.Copilot
           end
           return ""
         end,
         cond = conditions.buffer_not_empty and conditions.hide_small,
         color = { bg = colors.gray2, fg = colors.blue, gui = "bold" },
-        separator = { left = "", right = "" },
+        separator = { left = "", right = "" },
       })
       if require("config.utils").is_mcp_present() then
         table.insert(opts.sections.lualine_y, 1, {
