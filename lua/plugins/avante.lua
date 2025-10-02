@@ -60,7 +60,7 @@ return {
         providers = {
           copilot = {
             endpoint = "https://api.githubcopilot.com",
-            model = "claude-sonnet-4",
+            model = "claude-sonnet-4.5",
             -- model = "gpt-5",
             proxy = nil,
             allow_insecure = false,
