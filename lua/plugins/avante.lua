@@ -133,6 +133,84 @@ return {
         },
       }
       if vim.env.USER == "abz" then
+        -- i've set LITELLM_ENDPOINT, AVANTE_ANTHROPIC_API_KEY, AVANTE_OPENAI_API_KEY environment variables
+        opts.provider = "claude"
+        opts.providers.claude = {
+          endpoint = os.getenv("LITELLM_ENDPOINT"),
+          model = "openrouter-claude-sonnet-4.5",
+          timeout = 50000,
+          context_window = 200000,
+          extra_request_body = {
+            temperature = 0.75,
+            max_tokens = 64000,
+          },
+        }
+        opts.providers.openai = {
+          endpoint = os.getenv("LITELLM_ENDPOINT"),
+          model = "openrouter-openai-gpt-5-codex",
+          timeout = 60000,
+          context_window = 128000,
+          extra_request_body = {
+            temperature = 0.75,
+            max_completion_tokens = 32000,
+            reasoning_effort = "high",
+          },
+        }
+        opts.providers.copilot.disable_tools = false
+        opts.auto_suggestions_provider = "copilot"
+        opts.memory_summary_provider = "copilot"
+        opts.web_search_engine = {
+          provider = "tavily",
+        }
+        --         opts.dual_boost = {
+        --           enabled = true,
+        --           first_provider = "claude",
+        --           second_provider = "openai",
+        --           prompt = [[You are synthesizing two high-quality responses from different AI models. Your task is to create a superior response that leverages the strengths of both while maintaining your own expert judgment.
+        --
+        -- EVALUATION CRITERIA:
+        -- 1. Correctness & Accuracy: Identify any errors, bugs, or misconceptions in either response
+        -- 2. Completeness: Determine which response addresses all aspects of the request more thoroughly
+        -- 3. Code Quality: Evaluate adherence to best practices, idioms, and language-specific conventions
+        -- 4. Performance: Consider efficiency, scalability, and resource usage
+        -- 5. Security: Assess potential vulnerabilities or security implications
+        -- 6. Maintainability: Evaluate code clarity, documentation, and long-term sustainability
+        -- 7. Innovation: Recognize novel or elegant solutions
+        --
+        -- SYNTHESIS STRATEGY:
+        -- - Critically analyze both responses; don't assume either is perfect
+        -- - Prioritize correctness over all other factors
+        -- - Combine the most insightful explanations from both
+        -- - Integrate superior code patterns or approaches from either response
+        -- - If responses conflict, choose the technically superior approach and explain why
+        -- - Add your own improvements or optimizations where beneficial
+        -- - Maintain consistency in style, formatting, and tone
+        --
+        -- OUTPUT REQUIREMENTS:
+        -- - Provide the synthesized response directly without meta-commentary
+        -- - Do not reference "Response 1" or "Response 2" in your output
+        -- - If providing code, ensure it's complete, tested logic, and production-ready
+        -- - Include concise explanations for complex decisions or trade-offs
+        -- - Maintain the appropriate level of detail for the context
+        --
+        -- Reference Output 1 ({{first_provider}}):
+        -- {{provider1_output}}
+        --
+        -- Reference Output 2 ({{second_provider}}):
+        -- {{provider2_output}}
+        --
+        -- Generate your synthesized response now:]],
+        --           timeout = 1200000,
+        --         }
+        -- opts.cursor_applying_provider = "ollama"
+        -- opts.rag_service = {
+        --   enabled = true,
+        --   host_mount = os.getenv("HOME"),
+        --   provider = "ollama",
+        --   llm_model = "llama3.1:latest",
+        --   embed_model = "nomic-embed-text:latest",
+        --   endpoint = "http://host.docker.internal:11434",
+        -- }
         -- opts.auto_suggestions_provider = "ollama"
         -- opts.memory_summary_provider = "ollama"
         -- opts.ollama = {
@@ -143,21 +221,6 @@ return {
         --     num_ctx = 32768,
         --   },
         -- }
-        opts.providers.copilot.disable_tools = false
-        opts.auto_suggestions_provider = "copilot"
-        opts.memory_summary_provider = "copilot"
-        -- opts.cursor_applying_provider = "ollama"
-        -- opts.rag_service = {
-        --   enabled = true,
-        --   host_mount = os.getenv("HOME"),
-        --   provider = "ollama",
-        --   llm_model = "llama3.1:latest",
-        --   embed_model = "nomic-embed-text:latest",
-        --   endpoint = "http://host.docker.internal:11434",
-        -- }
-        opts.web_search_engine = {
-          provider = "tavily",
-        }
       end
       if require("config.utils").is_mcp_present() then
         opts.system_prompt = function()
