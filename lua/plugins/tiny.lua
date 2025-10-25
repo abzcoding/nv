@@ -6,15 +6,18 @@ return {
     config = function()
       require("tiny-inline-diagnostic").setup({
         preset = "classic",
-        virt_texts = {
-          priority = 2048,
-        },
-        -- transparent_bg = true,
-        multilines = {
-          enabled = true,
-        },
+        transparent_bg = true,
+        transparent_cursorline = false,
         options = {
           use_icons_from_diagnostic = true,
+          show_source = {
+            enabled = false,
+            if_many = true,
+          },
+          virt_texts = {
+            priority = 2048,
+          },
+          override_open_float = true,
         },
       })
     end,
