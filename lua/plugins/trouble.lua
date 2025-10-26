@@ -12,5 +12,8 @@ return {
       size = { width = 0.4, height = 0.3 },
       zindex = 200,
     },
+    icons = {
+      kinds = require("config.utils").kind_icons,
+    },
   },
 }
