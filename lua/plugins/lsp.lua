@@ -8,16 +8,15 @@ local icons = {
 return {
   "neovim/nvim-lspconfig",
   opts = function(_, opts)
-    local Keys = require("lazyvim.plugins.lsp.keymaps").get()
-    -- stylua: ignore
-    vim.list_extend(Keys, {
-      { "gd", "<cmd>Trouble lsp_definitions<cr>",      desc = "Goto Definition",        has = "definition" },
-      { "gr", "<cmd>Trouble lsp_references<cr>",       desc = "References",             nowait = true },
-      { "gI", "<cmd>Trouble lsp_implementations<cr>",  desc = "Goto Implementation",    nowait = true },
-      { "gy", "<cmd>Trouble lsp_type_definitions<cr>", desc = "Goto T[y]pe Definition", nowait = true },
-    })
     opts = opts or {}
-
+    opts.servers["*"] = {
+      keys = {
+        { "gd", "<cmd>Trouble lsp_definitions<cr>", desc = "Goto Definition", has = "definition" },
+        { "gr", "<cmd>Trouble lsp_references<cr>", desc = "References", nowait = true },
+        { "gI", "<cmd>Trouble lsp_implementations<cr>", desc = "Goto Implementation", nowait = true },
+        { "gy", "<cmd>Trouble lsp_type_definitions<cr>", desc = "Goto T[y]pe Definition", nowait = true },
+      },
+    }
     opts.diagnostics = {
       virtual_text = false,
       underline = false,
