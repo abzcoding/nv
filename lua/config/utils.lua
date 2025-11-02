@@ -208,14 +208,19 @@ M.is_online = function()
   if vim.env.NVIM_OFFLINE == "1" then
     return false
   end
-  local hosts_to_try = { "api.github.com" }
-  for _, host in ipairs(hosts_to_try) do
-    local ok, res = pcall(vim.loop.getaddrinfo, host, nil, { socktype = "stream" })
-    if ok and res and #res > 0 then
-      return true
-    end
+
+  local host = "api.github.com"
+  local is_online = false
+
+  local ok, res = pcall(function()
+    return vim.uv.getaddrinfo(host, nil, { socktype = "stream" })
+  end)
+
+  if ok and res and #res > 0 then
+    is_online = true
   end
-  return false
+
+  return is_online
 end
 
 return M
