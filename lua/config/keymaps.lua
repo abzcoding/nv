@@ -68,7 +68,7 @@ map(
 )
 
 -- diff
-map("n", "<leader>ds", "<cmd>windo diffthis<cr>", { desc = "Diff Split" })
+-- map("n", "<leader>ds", "<cmd>windo diffthis<cr>", { desc = "Diff Split" })
 
 -- escape
 map("i", "jk", "<ESC>:w<CR>", opts)
@@ -134,8 +134,7 @@ map("n", "<CR>", function()
     return
   end
 
-  vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<CR>', true, false, true), 'nt')
-
+  vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "nt")
 end, opts)
 
 require("which-key").add({
