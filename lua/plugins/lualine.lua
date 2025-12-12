@@ -218,7 +218,6 @@ return {
     event = "VeryLazy",
     config = function()
       local noice_status_mode = require("noice").api.status.mode
-      local copilot_status_ok, copilot_status
       local mel_ok, mel
 
       local space = {

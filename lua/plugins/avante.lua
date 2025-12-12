@@ -137,7 +137,7 @@ return {
         opts.provider = "claude"
         opts.providers.claude = {
           endpoint = os.getenv("LITELLM_ENDPOINT"),
-          model = "openrouter-claude-sonnet-4.5",
+          model = "openrouter-claude-opus-4.5",
           timeout = 50000,
           context_window = 200000,
           extra_request_body = {
