@@ -8,6 +8,7 @@ return {
       enabled = is_online,
     },
   },
+  version = "1.*",
   opts = function(_, opts)
     opts.enabled = function()
       local filetype = vim.bo[0].filetype

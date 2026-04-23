@@ -153,9 +153,27 @@ return {
         "--log=error",
         "--offset-encoding=utf-16",
         "--pch-storage=memory",
+        "--query-driver=/opt/homebrew/opt/llvm/bin/clang,/opt/homebrew/opt/llvm/bin/clang++",
         "--ranking-model=heuristics",
         "-j=12",
       },
+      on_new_config = function(new_config, new_root_dir)
+        local fallback_flags = { "-std=c++23", "-stdlib=libc++" }
+        local compile_flags = new_root_dir and (new_root_dir .. "/compile_flags.txt") or nil
+
+        -- Let project-local compile flags win; only apply the C++23 fallback when clangd
+        -- has no compilation database or compile_flags.txt to read from.
+        if compile_flags and vim.uv.fs_stat(compile_flags) then
+          new_config.init_options = vim.tbl_deep_extend("force", new_config.init_options or {}, {
+            fallbackFlags = {},
+          })
+          return
+        end
+
+        new_config.init_options = vim.tbl_deep_extend("force", new_config.init_options or {}, {
+          fallbackFlags = fallback_flags,
+        })
+      end,
       init_options = {
         usePlaceholders = true,
         completeUnimported = true,
@@ -165,6 +183,7 @@ return {
     opts.setup.clangd = function(_, _)
       require("lspconfig").clangd.setup(opts.servers.clangd)
       require("clangd_extensions").setup()
+      vim.lsp.enable('clangd')
       return true
     end
     local pylance_bundle = vim.fn.expand("~/.pylance/extension/dist/server.bundle.js")
