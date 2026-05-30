@@ -59,6 +59,9 @@ return {
     }
     opts.servers.yamlls = {
       cmd = { "yaml-language-server", "--stdio" },
+      flags = {
+        allow_incremental_sync = false,
+      },
       filetypes = { "yaml", "gha", "dependabot", "yaml", "yaml.docker-compose", "yaml.gitlab" },
       capabilities = {
         textDocument = {
