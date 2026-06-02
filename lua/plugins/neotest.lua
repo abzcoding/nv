@@ -1,12 +1,26 @@
 return {
   {
     "nvim-neotest/neotest",
-    dependencies = { "nvim-neotest/nvim-nio", "mrcjkb/rustaceanvim" },
+    dependencies = { "nvim-neotest/nvim-nio", "mrcjkb/rustaceanvim", "alfaix/neotest-gtest" },
     lazy = true,
     config = function()
       local opts = {
         adapters = {
           require("rustaceanvim.neotest"),
+          require("neotest-gtest").setup({
+            root = function(file)
+              return require("neotest.lib").files.match_root_pattern("CMakeLists.txt", "compile_commands.json", ".git")(
+                file
+              )
+            end,
+            is_test_file = function(file)
+              return file:match("test.*%.cpp$") or file:match(".*_test%.cpp$")
+            end,
+            filter_dir = function(name, rel_path, root)
+              return name ~= "build" and name ~= ".git" and name ~= ".cache" and name ~= "_deps"
+            end,
+            debug_adapter = "codelldb", -- or "cppdbg"
+          }),
         },
         quickfix = {
           enabled = false,

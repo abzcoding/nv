@@ -17,7 +17,7 @@ end
 
 return {
   {
-    "sindrets/diffview.nvim",
+    "dlyongemallo/diffview-plus.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
     event = "BufReadPre",
     keys = {
@@ -54,7 +54,6 @@ return {
             winbar_info = true,
           },
         },
-        enhanced_diff_hl = true,
         keymaps = {
           view = { q = "<Cmd>DiffviewClose<CR>" },
           file_panel = { q = "<Cmd>DiffviewClose<CR>" },
