@@ -61,13 +61,31 @@ return {
       cmd = { "yaml-language-server", "--stdio" },
       flags = {
         allow_incremental_sync = false,
+        debounce_text_changes = 150,
       },
       filetypes = { "yaml", "gha", "dependabot", "yaml", "yaml.docker-compose", "yaml.gitlab" },
+      on_attach = function(client, _)
+        -- yaml-language-server mis-handles incremental sync and crashes
+        -- vim.lsp.sync with assertion failures on yank/paste. Force Full sync.
+        if client.server_capabilities then
+          client.server_capabilities.textDocumentSync = {
+            openClose = true,
+            change = 1, -- 1 = Full, 2 = Incremental
+            save = { includeText = false },
+          }
+        end
+      end,
       capabilities = {
         textDocument = {
           foldingRange = {
             dynamicRegistration = false,
             lineFoldingOnly = true,
+          },
+          synchronization = {
+            dynamicRegistration = true,
+            willSave = false,
+            willSaveWaitUntil = false,
+            didSave = true,
           },
         },
       },
