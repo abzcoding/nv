@@ -6,6 +6,9 @@ local function link(group, other)
   cmd("highlight! link " .. group .. " " .. other)
 end
 
+-- use new ui
+--require("vim._core.ui2").enable({})
+
 -- add highlighting to weird files
 vim.filetype.add({
   extension = {

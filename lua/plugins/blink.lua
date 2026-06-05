@@ -3,12 +3,17 @@ local is_online = require("config.utils").is_online
 return {
   "saghen/blink.cmp",
   dependencies = {
+    { "saghen/blink.lib" },
     {
       "giuxtaposition/blink-cmp-copilot",
       enabled = is_online,
     },
   },
-  version = "1.*",
+  version = false,
+  branch = "main",
+  build = function()
+    require("blink.cmp").build():pwait()
+  end,
   opts = function(_, opts)
     opts.enabled = function()
       local filetype = vim.bo[0].filetype
@@ -28,7 +33,7 @@ return {
       return true
     end
     opts.fuzzy = vim.tbl_deep_extend("force", opts.fuzzy or {}, {
-      use_frecency = true,
+      frecency = { enabled = true },
       use_proximity = true,
     })
     opts.sources = vim.tbl_deep_extend("force", opts.sources or {}, {
@@ -100,16 +105,18 @@ return {
     })
 
     opts.cmdline = {
-      sources = function()
-        local type = vim.fn.getcmdtype()
-        if type == "/" or type == "?" then
-          return { "buffer" }
-        end
-        if type == ":" then
-          return { "cmdline" }
-        end
-        return {}
-      end,
+      sources = {
+        default = function()
+          local type = vim.fn.getcmdtype()
+          if type == "/" or type == "?" then
+            return { "buffer" }
+          end
+          if type == ":" then
+            return { "cmdline" }
+          end
+          return {}
+        end,
+      },
       keymap = {
         ["<Tab>"] = { "show", "accept" },
       },

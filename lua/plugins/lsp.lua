@@ -174,7 +174,6 @@ return {
         "--log=error",
         "--offset-encoding=utf-16",
         "--pch-storage=memory",
-        "--query-driver=/opt/homebrew/opt/llvm/bin/clang,/opt/homebrew/opt/llvm/bin/clang++",
         "--ranking-model=heuristics",
         "-j=12",
       },
