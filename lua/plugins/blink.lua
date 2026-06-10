@@ -12,7 +12,7 @@ return {
   version = false,
   branch = "main",
   build = function()
-    require("blink.cmp").build():pwait()
+    require("blink.cmp").build():pwait(60000)
   end,
   opts = function(_, opts)
     opts.enabled = function()
@@ -35,6 +35,7 @@ return {
     opts.fuzzy = vim.tbl_deep_extend("force", opts.fuzzy or {}, {
       frecency = { enabled = true },
       use_proximity = true,
+      implementation = "prefer_rust",
     })
     opts.sources = vim.tbl_deep_extend("force", opts.sources or {}, {
       default = function(_)
