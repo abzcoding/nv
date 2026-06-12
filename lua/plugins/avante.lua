@@ -56,33 +56,41 @@ return {
         rag_service = {
           enabled = false,
         },
-        cursor_applying_provider = "copilot",
+        disabled_tools = {
+          "list_files",
+          "search_files",
+          "read_file",
+          "create_file",
+          "rename_file",
+          "delete_file",
+          "create_dir",
+          "rename_dir",
+          "delete_dir",
+          "bash",
+        },
+        selector = {
+          provider = "snacks",
+        },
+        input = {
+          provider = "snacks",
+        },
         providers = {
+          morph = {
+            model = "morph-v3-large",
+          },
           copilot = {
             endpoint = "https://api.githubcopilot.com",
-            model = "claude-sonnet-4.5",
+            model = "gpt-5.3-codex",
             -- model = "gpt-5",
             proxy = nil,
             allow_insecure = false,
             timeout = 60000,
+            context_window = 128000,
             extra_request_body = {
               temperature = 0,
               max_tokens = 128000,
             },
             disable_tools = true,
-            telemetry = false,
-            disabled_tools = {
-              "list_files",
-              "search_files",
-              "read_file",
-              "create_file",
-              "rename_file",
-              "delete_file",
-              "create_dir",
-              "rename_dir",
-              "delete_dir",
-              "bash",
-            },
           },
         },
         suggestion = {
@@ -97,7 +105,6 @@ return {
           support_paste_from_clipboard = false,
           minimize_diff = true,
           enable_token_counting = true,
-          enable_cursor_planning_mode = true,
         },
         mappings = {
           --- @class AvanteConflictMappings
@@ -133,8 +140,9 @@ return {
         },
       }
       if vim.env.USER == "abz" then
+        opts.behaviour.enable_fastapply = true
         -- i've set LITELLM_ENDPOINT, AVANTE_ANTHROPIC_API_KEY, AVANTE_OPENAI_API_KEY environment variables
-        opts.provider = "claude"
+        -- opts.provider = "claude"
         opts.providers.claude = {
           endpoint = os.getenv("LITELLM_ENDPOINT"),
           model = "openrouter-claude-opus-4.5",
@@ -238,9 +246,9 @@ return {
     build = "make",
     dependencies = {
       "nvim-treesitter/nvim-treesitter",
-      "stevearc/dressing.nvim",
       "nvim-lua/plenary.nvim",
       "MunifTanjim/nui.nvim",
+      "folke/snacks.nvim",
       --- The below dependencies are optional,
       -- "zbirenbaum/copilot.lua", -- for providers='copilot'
     },
