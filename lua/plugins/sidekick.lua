@@ -1,3 +1,5 @@
+local is_online = require("config.utils").is_online()
+
 return {
   "folke/sidekick.nvim",
   opts = {
@@ -7,7 +9,7 @@ return {
         enabled = true,
       },
     },
-    nes = { enabled = true },
+    nes = { enabled = is_online },
   },
   keys = {
     {

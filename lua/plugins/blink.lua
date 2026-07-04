@@ -1,4 +1,4 @@
-local is_online = require("config.utils").is_online
+local is_online = require("config.utils").is_online()
 
 return {
   "saghen/blink.cmp",
@@ -42,7 +42,7 @@ return {
         local success, node = pcall(vim.treesitter.get_node)
         if vim.bo.filetype == "lua" then
           local src = { "lazydev", "lsp", "path" }
-          if is_online() then
+          if is_online then
             table.insert(src, "copilot")
           end
           return src
@@ -50,7 +50,7 @@ return {
           return { "buffer" }
         else
           local src = { "lsp", "path", "snippets", "buffer" }
-          if is_online() then
+          if is_online then
             table.insert(src, "copilot")
           end
           return src
@@ -95,7 +95,7 @@ return {
         },
         copilot = {
           name = "copilot",
-          enabled = is_online(),
+          enabled = is_online,
           module = "blink-cmp-copilot",
           kind = "Copilot",
           min_keyword_length = 5,

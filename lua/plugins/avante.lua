@@ -1,5 +1,5 @@
 local avante_prompts = require("config.prompts").avante
-local is_online = require("config.utils").is_online
+local is_online = require("config.utils").is_online()
 local function create_avante_call(prompt, use_context)
   if use_context then
     local filetype = vim.bo.filetype ~= "" and vim.bo.filetype or "unknown"
