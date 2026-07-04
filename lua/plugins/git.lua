@@ -19,7 +19,14 @@ return {
   {
     "dlyongemallo/diffview-plus.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
-    event = "BufReadPre",
+    cmd = {
+      "DiffviewOpen",
+      "DiffviewClose",
+      "DiffviewToggleFiles",
+      "DiffviewFocusFiles",
+      "DiffviewRefresh",
+      "DiffviewFileHistory",
+    },
     keys = {
       { "<leader>gdd", "<cmd>DiffviewOpen<CR>", desc = "DiffView" },
       { "<leader>gD", "<cmd>DiffviewFileHistory %<CR>", desc = "History" },

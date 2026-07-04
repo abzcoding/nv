@@ -12,6 +12,7 @@ return {
         bash = { "shfmt" },
         css = { "prettierd" },
         dependabot = { "yamlfmt" },
+        fish = { "fish_indent" },
         gha = { "yamlfmt" },
         html = { "prettierd" },
         javascript = { "prettierd" },

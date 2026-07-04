@@ -1,7 +1,6 @@
 return {
   {
     "cbochs/grapple.nvim",
-    event = "BufRead",
     keys = function()
       local keys = {
         { "<leader>H", "<cmd>Grapple toggle<cr>", desc = "Grapple toggle" },

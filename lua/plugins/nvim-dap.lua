@@ -1,6 +1,6 @@
 return {
   "mfussenegger/nvim-dap-python",
-  event = "VeryLazy",
+  ft = "python",
   lazy = true,
   -- stylua: ignore
   keys = {

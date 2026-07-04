@@ -34,25 +34,10 @@ return {
   },
   {
     "rachartier/tiny-code-action.nvim",
-    dependencies = {
-      { "nvim-lua/plenary.nvim" },
-      { "nvim-telescope/telescope.nvim" },
-    },
-    event = "LspAttach",
+    lazy = true,
     config = function()
       require("tiny-code-action").setup({
-        telescope_opts = {
-          layout_strategy = "vertical",
-          layout_config = {
-            width = 0.5,
-            height = 0.5,
-            preview_cutoff = 1,
-            preview_height = function(_, _, max_lines)
-              local h = math.floor(max_lines * 0.5)
-              return math.max(h, 10)
-            end,
-          },
-        },
+        picker = "snacks",
       })
     end,
   },

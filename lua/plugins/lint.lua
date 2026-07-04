@@ -4,6 +4,7 @@ return {
     linters_by_ft = {
       ["yaml.ansible"] = { "ansible_lint" },
       dockerfile = { "hadolint" },
+      fish = { "fish" },
       gha = { "actionlint" },
       sh = { "shellcheck" },
       terraform = { "terraform_validate", "tflint", "trivy" },

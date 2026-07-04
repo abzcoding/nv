@@ -189,12 +189,6 @@ local function getLspName()
     end
   end
 
-  local ft = vim_api.nvim_get_option_value("filetype", { buf = bufnr })
-  local sources = require("null-ls.sources")
-  for _, source in ipairs(sources.get_available(ft)) do
-    table.insert(buf_client_names, source.name)
-  end
-
   local hash = {}
   local unique_client_names = {}
 
