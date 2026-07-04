@@ -1,5 +1,7 @@
 return {
   "Civitasv/cmake-tools.nvim",
+  lazy = true,
   opts = {},
-  ft = { "c", "cpp", "objc", "objcpp", "h", "hpp" },
+  init = function() end,
+  cmd = { "CMake", "CMakeGenerate", "CMakeBuild", "CMakeRun", "CMakeDebug", "CMakeSelectBuildType", "CMakeSelectBuildTarget" },
 }
