@@ -1,6 +1,10 @@
 return {
   "mfussenegger/nvim-lint",
+  event = function()
+    return { "BufWritePost", "InsertLeave" }
+  end,
   opts = {
+    events = { "BufWritePost", "InsertLeave" },
     linters_by_ft = {
       ["yaml.ansible"] = { "ansible_lint" },
       dockerfile = { "hadolint" },

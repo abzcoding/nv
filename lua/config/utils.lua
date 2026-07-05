@@ -198,7 +198,7 @@ M.kind_icons = {
 }
 
 M.is_mcp_present = function()
-  if vim.uv.fs_stat(vim.fn.expand("~/.mcpservers.json")) then
+  if vim.uv.fs_stat(vim.fn.expand("~/.mcpservers.json")) and M.is_online() then
     return true
   end
   return false

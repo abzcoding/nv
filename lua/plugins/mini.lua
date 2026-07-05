@@ -2,8 +2,16 @@ return {
   {
     "nvim-mini/mini.splitjoin",
     version = "*",
-    event = "BufEnter",
-    config = true,
+    keys = {
+      {
+        "gS",
+        function()
+          require("mini.splitjoin").toggle()
+        end,
+        desc = "Toggle Split/Join",
+      },
+    },
+    opts = {},
   },
   {
     "nvim-mini/mini.surround",

@@ -1,6 +1,4 @@
 local map = vim.keymap.set
-local term = require("snacks.terminal")
-local lazygit = require("snacks.lazygit")
 local opts = { noremap = true, silent = true }
 
 -- run last ran command
@@ -41,12 +39,12 @@ map("v", ">", ">gv", { desc = "Indent right" })
 
 -- floating terminal
 map("n", "<c-/>", function()
-  term.toggle()
+  Snacks.terminal.toggle()
 end, { desc = "Terminal (root dir)" })
 
 -- git
 map("n", "<leader>gg", function()
-  lazygit.open()
+  Snacks.lazygit.open()
 end, { desc = "Lazygit (root dir)" })
 map(
   "n",
@@ -138,7 +136,3 @@ map("n", "<CR>", function()
 
   vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "nt")
 end, opts)
-
-require("which-key").add({
-  { "<leader>a", group = "Avante", icon = " " },
-})

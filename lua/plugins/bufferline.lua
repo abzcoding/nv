@@ -3,19 +3,6 @@ local fn = vim.fn
 local startswith = vim.startswith
 local split = vim.split
 
-local bufferline_groups_loaded, bufferline_groups = pcall(require, "bufferline.groups")
-if not bufferline_groups_loaded then
-  bufferline_groups = {
-    builtin = {
-      pinned = {
-        name = "pinned",
-        with = function(_) end,
-      },
-      ungroupued = { name = "ungrouped" },
-    },
-  }
-end
-
 local patterns = {
   test = { "_spec", "_test", "test_" },
   docs_exts = { md = true, txt = true, org = true, norg = true, wiki = true },
@@ -30,8 +17,10 @@ local patterns = {
 
 return {
   "akinsho/bufferline.nvim",
-  opts = {
-    options = {
+  opts = function(_, opts)
+    local bufferline_groups = require("bufferline.groups")
+    opts = opts or {}
+    opts.options = vim.tbl_deep_extend("force", opts.options or {}, {
       close_command = function(n)
         Snacks.bufdelete(n)
       end,
@@ -172,6 +161,7 @@ return {
           filetype = "snacks_layout_box",
         },
       },
-    },
-  },
+    })
+    return opts
+  end,
 }

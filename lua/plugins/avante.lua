@@ -1,5 +1,11 @@
-local avante_prompts = require("config.prompts").avante
-local is_online = require("config.utils").is_online()
+local function avante_prompt(name)
+  return require("config.prompts").avante[name]
+end
+
+local function is_online()
+  return require("config.utils").is_online()
+end
+
 local function create_avante_call(prompt, use_context)
   if use_context then
     local filetype = vim.bo.filetype ~= "" and vim.bo.filetype or "unknown"
@@ -285,7 +291,9 @@ return {
       },
       {
         "<leader>ar",
-        create_avante_call(avante_prompts.refactor),
+        function()
+          create_avante_call(avante_prompt("refactor"))()
+        end,
         mode = { "n", "v" },
         desc = "Refactor Code",
       },
@@ -293,9 +301,9 @@ return {
         "<leader>av",
         function()
           if vim.bo.filetype == "rust" or vim.bo.filetype == "toml" then
-            create_avante_call(avante_prompts.rust_design_review)()
+            create_avante_call(avante_prompt("rust_design_review"))()
           else
-            create_avante_call(avante_prompts.code_review)()
+            create_avante_call(avante_prompt("code_review"))()
           end
         end,
         mode = { "n", "v" },
@@ -303,49 +311,65 @@ return {
       },
       {
         "<leader>aA",
-        create_avante_call(avante_prompts.architecture_suggestion),
+        function()
+          create_avante_call(avante_prompt("architecture_suggestion"))()
+        end,
         mode = { "n", "v" },
         desc = "Architecture Suggestions",
       },
       {
         "<leader>al",
-        create_avante_call(avante_prompts.readability_analysis),
+        function()
+          create_avante_call(avante_prompt("readability_analysis"))()
+        end,
         desc = "Code Readability Analysis",
         mode = { "n", "v" },
       },
       {
         "<leader>ao",
-        create_avante_call(avante_prompts.optimize_code),
+        function()
+          create_avante_call(avante_prompt("optimize_code"))()
+        end,
         mode = { "n", "v" },
         desc = "Optimize Code",
       },
       {
         "<leader>ax",
-        create_avante_call(avante_prompts.explain_code, true),
+        function()
+          create_avante_call(avante_prompt("explain_code"), true)()
+        end,
         mode = { "n", "v" },
         desc = "Explain Code",
       },
       {
         "<leader>ab",
-        create_avante_call(avante_prompts.fix_bugs, true),
+        function()
+          create_avante_call(avante_prompt("fix_bugs"), true)()
+        end,
         mode = { "n", "v" },
         desc = "Fix Bugs",
       },
       {
         "<leader>au",
-        create_avante_call(avante_prompts.add_tests),
+        function()
+          create_avante_call(avante_prompt("add_tests"))()
+        end,
         mode = { "n", "v" },
         desc = "Add Tests",
       },
       {
         "<leader>az",
-        create_avante_call(avante_prompts.security_review),
+        function()
+          create_avante_call(avante_prompt("security_review"))()
+        end,
         mode = { "n", "v" },
         desc = "Security Analysis",
       },
       {
         "<leader>am",
-        create_avante_call(avante_prompts.summarize),
+        function()
+          create_avante_call(avante_prompt("summarize"))()
+        end,
         mode = { "n", "v" },
         desc = "Summarize text",
       },
@@ -353,7 +377,7 @@ return {
         "<leader>ap",
         function()
           local ft = vim.bo.filetype
-          local prompt = avante_prompts.language_specific[ft]
+          local prompt = avante_prompt("language_specific")[ft]
             or ("Improve this code following best practices for " .. ft)
           create_avante_call(prompt)()
         end,

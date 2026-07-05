@@ -172,11 +172,7 @@ local function getLspName()
     end
   end
 
-  local lint
-  local lint_s, lint_module = pcall(require, "lint")
-  if lint_s then
-    lint = lint_module
-  end
+  local lint = package.loaded["lint"]
 
   if lint and lint.linters_by_ft[buf_ft] then
     local linters = lint.linters_by_ft[buf_ft]
