@@ -2,7 +2,7 @@ local function avante_prompt(name)
   return require("config.prompts").avante[name]
 end
 
-local is_offline = require("config.utils").is_online()
+local is_online = require("config.utils").is_online()
 
 local function create_avante_call(prompt, use_context)
   if use_context then
