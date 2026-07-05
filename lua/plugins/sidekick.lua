@@ -10,6 +10,11 @@ return {
       },
     },
     nes = { enabled = is_online },
+    copilot = {
+      status = {
+        enabled = is_online,
+      },
+    },
   },
   keys = {
     {

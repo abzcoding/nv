@@ -42,6 +42,9 @@ return {
     opts.inlay_hints = {
       enabled = false,
     }
+    if not require("config.utils").is_online() then
+      opts.servers.copilot = { enabled = false }
+    end
     -- opts.servers = opts.servers or {}
     opts.servers.jsonls = {
       before_init = function(_, new_config)
