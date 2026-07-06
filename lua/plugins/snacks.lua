@@ -200,6 +200,18 @@ return {
         enabled = false,
       },
     },
+    -- NOTE: needs `@mermaid-js/mermaid-cli` to work
+    image = {
+      enabled = true,
+      doc = {
+        enabled = true,
+        inline = true,
+        float = true,
+      },
+      convert = {
+        notify = true,
+      },
+    },
     terminal = {
       shell = "/bin/sh",
     },
