@@ -8,7 +8,7 @@ return {
   end,
   event = "BufReadPost",
   -- cmd = "MCPHub",
-  build = "npm install -g mcp-hub@latest",
+  build = "npm install -g mcp-hub@4.2.1",
   config = function()
     require("mcphub").setup({
       port = 4000,

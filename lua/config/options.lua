@@ -53,6 +53,7 @@ opt.ttimeoutlen = 10
 opt.wrapscan = true -- Searches wrap around the end of the file
 opt.secure = true -- Disable autocmd etc for project local vimrc files.
 opt.exrc = false -- Allow project local vimrc files example .nvimrc see :h exrc
+opt.modeline = false
 opt.confirm = true -- make vim prompt me to save before doing destructive things
 opt.autowriteall = true -- automatically :write before running commands and changing files
 global.editorconfig = true

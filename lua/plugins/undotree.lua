@@ -11,7 +11,7 @@ return {
 
       if vim.fn.has("persistent_undo") == 1 then
         if vim.fn.isdirectory(undodir) == 0 then
-          os.execute("mkdir -p " .. undodir)
+          vim.notify("please create ~/.undo-nvim", vim.log.levels.WARN)
         end
 
         vim.opt.undodir = undodir
