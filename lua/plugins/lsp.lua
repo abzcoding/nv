@@ -154,7 +154,7 @@ return {
         "meson_options.txt",
       },
       capabilities = {
-        offsetEncoding = { "utf-16" },
+        positionEncodings = { "utf-16" },
         textDocument = {
           completion = {
             editsNearCursor = true,
