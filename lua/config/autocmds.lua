@@ -49,6 +49,19 @@ aucmd({ "BufEnter", "InsertLeave" }, {
   end,
 })
 
+local import_fold_group = vim.api.nvim_create_augroup("import-folds", { clear = true })
+
+aucmd("FileType", {
+  group = import_fold_group,
+  pattern = { "c", "cpp", "go", "rust", "python" },
+  callback = function()
+    _G.NvFoldExpr = _G.NvFoldExpr or require("config.utils").foldexpr
+
+    vim.opt_local.foldmethod = "expr"
+    vim.opt_local.foldexpr = "v:lua.NvFoldExpr()"
+  end,
+})
+
 aucmd({ "BufEnter" }, {
   pattern = { "*.csv" },
   callback = function()

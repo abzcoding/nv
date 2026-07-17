@@ -4,18 +4,141 @@ local api = vim.api
 local fn = vim.fn
 local ts = vim.treesitter
 
-function M.foldtext()
-  local pos = vim.v.foldstart
-  local line = api.nvim_buf_get_lines(0, pos - 1, pos, false)[1]
+local import_filetypes = {
+  c = true,
+  cpp = true,
+  go = true,
+  rust = true,
+  python = true,
+}
 
-  local ft = vim.bo.filetype
-  local lang = ts.language.get_lang(ft)
+local function import_directive(line, filetype)
+  local indent = line:match("^%s*") or ""
+
+  if filetype == "c" or filetype == "cpp" then
+    if line:match("^%s*#%s*include%f[%W]") then
+      return indent .. "#include", "@keyword.directive"
+    end
+  elseif filetype == "go" then
+    if line:match("^%s*import%f[%W]") then
+      return indent .. "import", "@keyword.import"
+    end
+  elseif filetype == "rust" then
+    if line:match("^%s*pub%s+use%f[%W]") then
+      return indent .. "pub use", "@keyword.import"
+    end
+
+    if line:match("^%s*use%f[%W]") then
+      return indent .. "use", "@keyword.import"
+    end
+  elseif filetype == "python" then
+    if line:match("^%s*from%s+[%w_%.]+%s+import%f[%W]") then
+      return indent .. "from … import", "@keyword.import"
+    end
+
+    if line:match("^%s*import%f[%W]") then
+      return indent .. "import", "@keyword.import"
+    end
+  end
+end
+
+local function fold_suffix(line)
+  local count = vim.v.foldend - vim.v.foldstart
+  local marker = line:match("{%s*$") and "... }" or "{ ... }"
+  local unit = count == 1 and "line" or "lines"
+
+  return string.format(" %s ( %d %s)", marker, count, unit)
+end
+
+local function import_run_length(lnum, filetype)
+  local line = fn.getline(lnum)
+  local indent = line:match("^%s*") or ""
+  local first = lnum
+  local last = lnum
+
+  while first > 1 do
+    local previous = fn.getline(first - 1)
+
+    if not import_directive(previous, filetype) or (previous:match("^%s*") or "") ~= indent then
+      break
+    end
+
+    first = first - 1
+  end
+
+  while last < fn.line("$") do
+    local following = fn.getline(last + 1)
+
+    if not import_directive(following, filetype) or (following:match("^%s*") or "") ~= indent then
+      break
+    end
+
+    last = last + 1
+  end
+
+  return first, last
+end
+
+function M.foldexpr()
+  local lnum = vim.v.lnum
+  local filetype = vim.bo.filetype
+  local line = fn.getline(lnum)
+  local expression = ts.foldexpr(lnum)
+
+  if not import_filetypes[filetype] or not import_directive(line, filetype) then
+    return expression
+  end
+
+  local first, last = import_run_length(lnum, filetype)
+  local minimum = filetype == "c" or filetype == "cpp" and 3 or 2
+
+  if last - first + 1 < minimum then
+    return expression
+  end
+
+  local level = (tonumber(expression:match("%d+")) or 0) + 1
+
+  if lnum == first then
+    return ">" .. level
+  end
+
+  if lnum == last then
+    return "<" .. level
+  end
+
+  return tostring(level)
+end
+
+function M.foldtext()
+  local bufnr = api.nvim_get_current_buf()
+  local start_line = vim.v.foldstart
+  local row = start_line - 1
+  local line = fn.getline(start_line)
+  local filetype = vim.bo[bufnr].filetype
+
+  if line == "" then
+    return fn.foldtext()
+  end
+
+  local directive, highlight = import_directive(line, filetype)
+
+  if directive then
+    return {
+      { directive, highlight },
+      { fold_suffix(line), "Folded" },
+    }
+  end
+
+  local lang = ts.language.get_lang(filetype)
   if not lang then
     return fn.foldtext()
   end
 
-  local parser = ts.get_parser(0, lang, { error = false })
-  if not parser then
+  local ok, parser = pcall(ts.get_parser, bufnr, lang, {
+    error = false,
+  })
+
+  if not ok or not parser then
     return fn.foldtext()
   end
 
@@ -24,51 +147,77 @@ function M.foldtext()
     return fn.foldtext()
   end
 
-  local tree = parser:parse({ pos - 1, pos })[1]
+  local parsed, trees = pcall(parser.parse, parser, {
+    row,
+    row + 1,
+  })
+
+  local tree = parsed and trees and trees[1]
   if not tree then
     return fn.foldtext()
   end
 
-  local root = tree:root()
-  if not root then
-    return fn.foldtext()
-  end
+  local captures = {}
+  local seen = {}
 
-  local result = {}
-  local line_pos = 0
-  local prev_range = nil
-
-  local fold_line_count = vim.v.foldend - vim.v.foldstart
-  local fold_suffix = " {...} ( " .. fold_line_count .. " lines)"
-
-  for id, node, _ in query:iter_captures(root, 0, pos - 1, pos) do
-    local name = query.captures[id]
+  for id, node in query:iter_captures(tree:root(), bufnr, row, row + 1) do
     local start_row, start_col, end_row, end_col = node:range()
 
-    if start_row ~= pos - 1 or end_row ~= pos - 1 then
-      goto continue
+    if start_row == row and end_row == row then
+      local key = start_col .. ":" .. end_col
+
+      seen[key] = {
+        start_col = start_col,
+        end_col = end_col,
+        highlight = "@" .. query.captures[id],
+      }
     end
-
-    if start_col > line_pos then
-      table.insert(result, { line:sub(line_pos + 1, start_col), "Folded" })
-    end
-
-    line_pos = end_col
-
-    local text = ts.get_node_text(node, 0)
-
-    if prev_range and start_col == prev_range[1] and end_col == prev_range[2] then
-      result[#result] = { text, "@" .. name }
-    else
-      table.insert(result, { text, "@" .. name })
-    end
-
-    prev_range = { start_col, end_col }
-
-    ::continue::
   end
 
-  table.insert(result, { fold_suffix, "Folded" })
+  for _, capture in pairs(seen) do
+    captures[#captures + 1] = capture
+  end
+
+  table.sort(captures, function(a, b)
+    if a.start_col == b.start_col then
+      return a.end_col < b.end_col
+    end
+
+    return a.start_col < b.start_col
+  end)
+
+  local result = {}
+  local position = 0
+
+  for _, capture in ipairs(captures) do
+    if capture.start_col >= position then
+      if capture.start_col > position then
+        result[#result + 1] = {
+          line:sub(position + 1, capture.start_col),
+          "Folded",
+        }
+      end
+
+      result[#result + 1] = {
+        line:sub(capture.start_col + 1, capture.end_col),
+        capture.highlight,
+      }
+
+      position = capture.end_col
+    end
+  end
+
+  if position < #line then
+    result[#result + 1] = {
+      line:sub(position + 1),
+      "Folded",
+    }
+  end
+
+  result[#result + 1] = {
+    fold_suffix(line),
+    "Folded",
+  }
 
   return result
 end
@@ -185,7 +334,7 @@ M.kind_icons = {
   Snippet = "", --" ",""," ","󱄽 "
   Spell = "󰓆",
   StaticMethod = "",
-  String = "󰅳", -- " ","𝓐 " ," " ,"󰅳 "   
+  String = "󰅳", -- " ","𝓐 " ," " ,"󰅳 "  
   Struct = "󰙅", -- "  "
   Supermaven = "",
   TabNine = "󰏚",
