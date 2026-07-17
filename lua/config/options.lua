@@ -13,6 +13,7 @@ end
 vim.filetype.add({
   extension = {
     fnl = "fennel",
+    tml = "gohtmltmpl",
     wiki = "markdown",
   },
   filename = {
@@ -28,7 +29,6 @@ vim.filetype.add({
   },
   pattern = {
     ["%.env.*"] = "config",
-    ["*.tml"] = "gohtmltmpl",
     [".*/%.github/dependabot.yaml"] = "dependabot",
     [".*/%.github/dependabot.yml"] = "dependabot",
     [".*/%.github/workflows/[%w/]+.*%.yaml"] = "gha",

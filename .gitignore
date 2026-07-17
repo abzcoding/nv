@@ -6,5 +6,4 @@ debug
 foo.*
 *.log
 data
-lazy-lock.json
 .DS_Store
