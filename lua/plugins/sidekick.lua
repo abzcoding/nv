@@ -2,6 +2,10 @@ local is_online = require("config.utils").is_online()
 
 return {
   "folke/sidekick.nvim",
+  cmd = "Sidekick",
+  dependencies = {
+    "zbirenbaum/copilot.lua",
+  },
   opts = {
     cli = {
       mux = {

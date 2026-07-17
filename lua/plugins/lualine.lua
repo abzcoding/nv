@@ -23,6 +23,23 @@ local conditions = {
   end,
 }
 
+local function all_conditions(...)
+  local checks = { ... }
+  return function()
+    for _, check in ipairs(checks) do
+      if not check() then
+        return false
+      end
+    end
+    return true
+  end
+end
+
+local function sidekick_status()
+  local status = package.loaded["sidekick.status"]
+  return type(status) == "table" and status.get() or nil
+end
+
 local icons = {
   normal = { " 󰊠 ", "  ", "  ", "  ", "  ", "  ", "  ", " 󰄌 ", "  " }, --  , 󱗃 ,  , 󰮣 , 󰌪 ,
   insert = { "  ", "  ", " 󰣙 ", "  ", " 󰛓 ", "  ", " 󰧑 ", " 󰚥 ", " 󰊴 " }, --  , ,   ,  , 󰼁
@@ -208,7 +225,6 @@ return {
     event = "VeryLazy",
     config = function()
       local noice_status_mode = require("noice").api.status.mode
-      local mel_ok, mel
 
       local space = {
         function()
@@ -251,7 +267,7 @@ return {
 
           return indicators .. show_name
         end,
-        cond = conditions.buffer_not_empty and conditions.hide_small,
+        cond = all_conditions(conditions.buffer_not_empty, conditions.hide_small),
         color = { bg = colors.blue, fg = colors.bg, gui = "bold" },
         separator = { left = "", right = "" },
       }
@@ -261,7 +277,7 @@ return {
         icons_enabled = false,
         color = { bg = colors.gray2, fg = colors.blue, gui = "bold" },
         separator = { left = "", right = "" },
-        cond = conditions.buffer_not_empty and conditions.hide_small,
+        cond = all_conditions(conditions.buffer_not_empty, conditions.hide_small),
       }
 
       local branch = {
@@ -269,7 +285,7 @@ return {
         icon = "",
         color = { bg = colors.green, fg = colors.bg, gui = "bold" },
         separator = { left = "", right = "" },
-        cond = conditions.check_git_workspace and conditions.hide_in_width,
+        cond = all_conditions(conditions.check_git_workspace, conditions.hide_in_width),
       }
 
       local location = {
@@ -280,7 +296,7 @@ return {
         end,
         color = { bg = colors.yellow, fg = colors.bg_dark, gui = "bold" },
         separator = { left = "", right = "" },
-        cond = conditions.buffer_not_empty and conditions.hide_small,
+        cond = all_conditions(conditions.buffer_not_empty, conditions.hide_small),
       }
 
       local diff = {
@@ -294,7 +310,7 @@ return {
           modified = { fg = colors.yellow },
           removed = { fg = colors.red },
         },
-        cond = conditions.buffer_not_empty and conditions.hide_small,
+        cond = all_conditions(conditions.buffer_not_empty, conditions.hide_small),
       }
 
       local pyenv = {
@@ -437,42 +453,28 @@ return {
       }
       table.insert(opts.sections.lualine_y, 3, {
         function()
-          local status = require("sidekick.status").get()
-          if status.kind == "Normal" then
+          local status = sidekick_status()
+          if status and status.kind == "Normal" then
             return LazyVim.config.icons.kinds.Copilot
           end
           return ""
         end,
-        cond = conditions.buffer_not_empty and conditions.hide_small,
+        cond = all_conditions(conditions.buffer_not_empty, conditions.hide_small, sidekick_status),
         color = { bg = colors.gray2, fg = colors.blue, gui = "bold" },
         separator = { left = "", right = "" },
       })
       if require("config.utils").is_mcp_present() then
         table.insert(opts.sections.lualine_y, 1, {
           function()
-            if not mel then
-              mel_ok, mel = pcall(require, "mcphub.extensions.lualine")
-            end
-            if not mel_ok then
-              return "? MCP"
-            end
-
-            mel:create_autocommands()
-            local status_icon, _ = mel:get_status_display()
-
-            -- Show either the spinner or the number of active servers
-            local count_or_spinner = (
-              vim.g.mcphub_tool_active
-              or vim.g.mcphub_resource_active
-              or vim.g.mcphub_prompt_active
-            )
-                and "⠋"
-              or tostring(vim.g.mcphub_active_servers or 0)
-            return status_icon .. " " .. count_or_spinner
+            local count_or_spinner = vim.g.mcphub_executing and "⠋" or tostring(vim.g.mcphub_servers_count or 0)
+            return "󰐻 " .. count_or_spinner
           end,
           color = { bg = colors.gray2, fg = colors.blue, gui = "bold" },
           separator = { left = "", right = "" },
-          cond = conditions.buffer_not_empty and conditions.hide_small,
+          cond = all_conditions(conditions.buffer_not_empty, conditions.hide_small, function()
+            local status = vim.g.mcphub_status
+            return status ~= nil and status ~= "stopped"
+          end),
         })
       end
 

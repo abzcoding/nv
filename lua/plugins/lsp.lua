@@ -9,14 +9,14 @@ return {
   "neovim/nvim-lspconfig",
   opts = function(_, opts)
     opts = opts or {}
-    opts.servers["*"] = {
-      keys = {
-        { "gd", "<cmd>Trouble lsp_definitions<cr>", desc = "Goto Definition", has = "definition" },
-        { "gr", "<cmd>Trouble lsp_references<cr>", desc = "References", nowait = true },
-        { "gI", "<cmd>Trouble lsp_implementations<cr>", desc = "Goto Implementation", nowait = true },
-        { "gy", "<cmd>Trouble lsp_type_definitions<cr>", desc = "Goto T[y]pe Definition", nowait = true },
-      },
-    }
+    opts.servers["*"] = opts.servers["*"] or {}
+    opts.servers["*"].keys = opts.servers["*"].keys or {}
+    vim.list_extend(opts.servers["*"].keys, {
+      { "gd", "<cmd>Trouble lsp_definitions<cr>", desc = "Goto Definition", has = "definition" },
+      { "gr", "<cmd>Trouble lsp_references<cr>", desc = "References", nowait = true },
+      { "gI", "<cmd>Trouble lsp_implementations<cr>", desc = "Goto Implementation", nowait = true },
+      { "gy", "<cmd>Trouble lsp_type_definitions<cr>", desc = "Goto T[y]pe Definition", nowait = true },
+    })
     opts.diagnostics = {
       virtual_text = false,
       underline = false,
@@ -136,25 +136,23 @@ return {
     opts.servers.clangd = {
       filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
       keys = {
-        { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<cr>", desc = "Switch Source/Header (C/C++)" },
+        { "<leader>ch", "<cmd>LspClangdSwitchSourceHeader<cr>", desc = "Switch Source/Header (C/C++)" },
       },
-      root_dir = function(fname)
-        return require("lspconfig.util").root_pattern(
-          ".clang-format",
-          ".clang-tidy",
-          ".clangd",
-          ".git",
-          "Makefile",
-          "build.ninja",
-          "compile_commands.json",
-          "compile_flags.txt",
-          "config.h.in",
-          "configure.ac",
-          "configure.in",
-          "meson.build",
-          "meson_options.txt"
-        )(fname)
-      end,
+      root_markers = {
+        ".clang-format",
+        ".clang-tidy",
+        ".clangd",
+        ".git",
+        "Makefile",
+        "build.ninja",
+        "compile_commands.json",
+        "compile_flags.txt",
+        "config.h.in",
+        "configure.ac",
+        "configure.in",
+        "meson.build",
+        "meson_options.txt",
+      },
       capabilities = {
         offsetEncoding = { "utf-16" },
         textDocument = {
@@ -180,20 +178,20 @@ return {
         "--ranking-model=heuristics",
         "-j=12",
       },
-      on_new_config = function(new_config, new_root_dir)
+      before_init = function(_, config)
         local fallback_flags = { "-std=c++23", "-stdlib=libc++" }
-        local compile_flags = new_root_dir and (new_root_dir .. "/compile_flags.txt") or nil
+        local compile_flags = config.root_dir and (config.root_dir .. "/compile_flags.txt") or nil
 
         -- Let project-local compile flags win; only apply the C++23 fallback when clangd
         -- has no compilation database or compile_flags.txt to read from.
         if compile_flags and vim.uv.fs_stat(compile_flags) then
-          new_config.init_options = vim.tbl_deep_extend("force", new_config.init_options or {}, {
+          config.init_options = vim.tbl_deep_extend("force", config.init_options or {}, {
             fallbackFlags = {},
           })
           return
         end
 
-        new_config.init_options = vim.tbl_deep_extend("force", new_config.init_options or {}, {
+        config.init_options = vim.tbl_deep_extend("force", config.init_options or {}, {
           fallbackFlags = fallback_flags,
         })
       end,
@@ -203,12 +201,7 @@ return {
         clangdFileStatus = true,
       },
     }
-    opts.setup.clangd = function(_, _)
-      require("lspconfig").clangd.setup(opts.servers.clangd)
-      require("clangd_extensions").setup()
-      vim.lsp.enable('clangd')
-      return true
-    end
+
     local pylance_bundle = vim.fn.expand("~/.pylance/extension/dist/server.bundle.js")
     if vim.uv.fs_stat(pylance_bundle) then
       local root_files = {
@@ -223,50 +216,34 @@ return {
         local ep = vim.fn.exepath(expr)
         return ep ~= "" and ep or nil
       end
-      local configs = require("lspconfig.configs")
-      configs.pylance = {
-        default_config = {
-          before_init = function(_, config)
-            if not config.settings.python then
-              config.settings.python = {}
-            end
-            if not config.settings.python.pythonPath then
-              config.settings.python.pythonPath = exepath("python3") or exepath("python") or "python"
-            end
-          end,
-          cmd = {
-            "node",
-            pylance_bundle,
-            "--stdio",
-          },
-          filetypes = { "python" },
-          single_file_support = true,
-          root_dir = require("lspconfig.util").root_pattern(unpack(root_files)),
-          settings = {
-            python = {
-              analysis = {
-                inlayHints = {
-                  variableTypes = true,
-                  functionReturnTypes = false,
-                  callArgumentNames = true,
-                  pytestParameters = true,
-                },
+      opts.servers.pylance = {
+        mason = false,
+        before_init = function(_, config)
+          if not config.settings.python.pythonPath then
+            config.settings.python.pythonPath = exepath("python3") or exepath("python") or "python"
+          end
+        end,
+        cmd = {
+          "node",
+          pylance_bundle,
+          "--stdio",
+        },
+        filetypes = { "python" },
+        single_file_support = true,
+        root_markers = root_files,
+        settings = {
+          python = {
+            analysis = {
+              inlayHints = {
+                variableTypes = true,
+                functionReturnTypes = false,
+                callArgumentNames = true,
+                pytestParameters = true,
               },
             },
           },
         },
       }
-      opts.setup.pylance = function(_, _)
-        require("lspconfig").pylance.setup({
-          cmd = {
-            "node",
-            pylance_bundle,
-            "--stdio",
-          },
-          filetypes = { "python" },
-        })
-        return true
-      end
     end
     return opts
   end,

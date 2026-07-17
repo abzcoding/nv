@@ -72,7 +72,16 @@ aucmd("filetype", {
     -- https://github.com/nvim-neotest/neotest/issues/387#issuecomment-2409133005
     vim.keymap.set("n", "gF", function()
       local current_word = vim.fn.expand("<cWORD>")
-      local tokens = vim.split(current_word, ":", { trimempty = true })
+      local file, line = current_word:match("^(.-):(%d+):%d+:?$")
+      if not file then
+        file, line = current_word:match("^(.-):(%d+):?$")
+      end
+      file = file or current_word
+      if vim.fn.filereadable(file) ~= 1 then
+        vim.notify("No readable file under cursor: " .. file, vim.log.levels.WARN)
+        return
+      end
+
       local win_ids = vim.api.nvim_list_wins()
       local widest_win_id = -1
       local widest_win_width = -1
@@ -88,11 +97,16 @@ aucmd("filetype", {
         end
         ::continue::
       end
+      if widest_win_id == -1 then
+        return
+      end
+
       vim.api.nvim_set_current_win(widest_win_id)
-      if #tokens == 1 then
-        vim.cmd("e " .. tokens[1])
-      else
-        vim.cmd("e +" .. tokens[2] .. " " .. tokens[1])
+      vim.api.nvim_cmd({ cmd = "edit", args = { file } }, {})
+      if line then
+        local line_count = vim.api.nvim_buf_line_count(0)
+        local line_number = math.max(1, math.min(tonumber(line), line_count))
+        vim.api.nvim_win_set_cursor(0, { line_number, 0 })
       end
     end, { remap = true, buffer = true })
   end,

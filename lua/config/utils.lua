@@ -198,29 +198,11 @@ M.kind_icons = {
 }
 
 M.is_mcp_present = function()
-  if vim.uv.fs_stat(vim.fn.expand("~/.mcpservers.json")) and M.is_online() then
-    return true
-  end
-  return false
+  return M.is_online() and vim.uv.fs_stat(vim.fn.expand("~/.mcpservers.json")) ~= nil
 end
 
 M.is_online = function()
-  if vim.env.NVIM_OFFLINE == "1" then
-    return false
-  end
-
-  local host = "api.github.com"
-  local is_online = false
-
-  local ok, res = pcall(function()
-    return vim.uv.getaddrinfo(host, nil, { socktype = "stream" })
-  end)
-
-  if ok and res and #res > 0 then
-    is_online = true
-  end
-
-  return is_online
+  return vim.env.NVIM_OFFLINE ~= "1"
 end
 
 return M

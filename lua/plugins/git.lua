@@ -1,18 +1,10 @@
 local get_main_branch = function()
-  local handle = io.popen("git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null")
-  if not handle then
+  local result = vim.system({ "git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD" }, { text = true }):wait()
+  if result.code ~= 0 then
     return ""
   end
 
-  local result = handle:read("*a")
-  handle:close()
-
-  if not result or result == "" then
-    return ""
-  end
-
-  local branch = result:match("refs/remotes/origin/([%w%-_/]+)")
-  return branch or ""
+  return vim.trim(result.stdout or ""):match("^origin/(.+)$") or ""
 end
 
 return {
@@ -35,10 +27,10 @@ return {
         function()
           local branch = get_main_branch()
           if branch == "" then
-            print("Could not get main branch")
+            vim.notify("Could not determine origin's main branch", vim.log.levels.WARN)
             return
           end
-          vim.cmd("DiffviewOpen " .. branch)
+          vim.api.nvim_cmd({ cmd = "DiffviewOpen", args = { branch } }, {})
         end,
         desc = "DiffView main branch",
       },

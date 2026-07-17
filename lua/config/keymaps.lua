@@ -1,6 +1,23 @@
 local map = vim.keymap.set
 local opts = { noremap = true, silent = true }
 
+map("n", "<leader>aE", function()
+  local utils = require("config.utils")
+  if not utils.is_online() then
+    vim.notify("AI tools are disabled by NVIM_OFFLINE", vim.log.levels.WARN)
+    return
+  end
+
+  local plugins = { "copilot.lua", "sidekick.nvim", "avante.nvim" }
+  if utils.is_mcp_present() then
+    table.insert(plugins, "mcphub.nvim")
+  end
+
+  require("lazy").load({ plugins = plugins })
+  require("sidekick.nes").enable(true)
+  vim.notify("AI tools enabled", vim.log.levels.INFO)
+end, { desc = "Enable AI tools" })
+
 -- run last ran command
 map("n", "<leader>ol", "<cmd>OverseerRestartLast<cr>", { desc = "Overseer Run Last" })
 

@@ -6,9 +6,10 @@ return {
   enabled = function()
     return require("config.utils").is_mcp_present()
   end,
-  event = "BufReadPost",
-  -- cmd = "MCPHub",
-  build = "npm install -g mcp-hub@4.2.1",
+  cmd = "MCPHub",
+  keys = {
+    { "<leader>aM", "<cmd>MCPHub<cr>", desc = "MCP Hub" },
+  },
   config = function()
     require("mcphub").setup({
       port = 4000,

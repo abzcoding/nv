@@ -4,6 +4,43 @@ end
 
 local is_online = require("config.utils").is_online()
 
+local function enable_blink_copilot()
+  local blink = package.loaded["blink.cmp"]
+  if not blink then
+    return false
+  end
+  if vim.g.blink_copilot_enabled then
+    return true
+  end
+
+  blink.add_source_provider("copilot", {
+    name = "copilot",
+    module = "blink-cmp-copilot",
+    kind = "Copilot",
+    min_keyword_length = 5,
+    score_offset = 10,
+    async = true,
+  })
+  vim.g.blink_copilot_enabled = true
+  return true
+end
+
+local function enable_blink_copilot_when_ready()
+  if enable_blink_copilot() then
+    return
+  end
+
+  vim.api.nvim_create_autocmd("User", {
+    pattern = "LazyLoad",
+    callback = function(event)
+      if event.data == "blink.cmp" then
+        enable_blink_copilot()
+        return true
+      end
+    end,
+  })
+end
+
 local function create_avante_call(prompt, use_context)
   if use_context then
     local filetype = vim.bo.filetype ~= "" and vim.bo.filetype or "unknown"
@@ -24,10 +61,16 @@ return {
   {
     "zbirenbaum/copilot.lua",
     cmd = "Copilot",
-    event = "InsertEnter",
+    dependencies = {
+      "giuxtaposition/blink-cmp-copilot",
+    },
     enabled = is_online,
     config = function()
       require("copilot").setup({
+        suggestion = {
+          enabled = false,
+        },
+        panel = { enabled = false },
         filetypes = {
           ["*"] = false,
           avante = true,
@@ -47,11 +90,31 @@ return {
           typescriptreact = true,
         },
       })
+      enable_blink_copilot_when_ready()
     end,
   },
   {
     "yetone/avante.nvim",
-    -- event = "BufReadPost",
+    cmd = {
+      "AvanteACPModels",
+      "AvanteACPModes",
+      "AvanteAsk",
+      "AvanteBuild",
+      "AvanteChat",
+      "AvanteChatNew",
+      "AvanteClear",
+      "AvanteEdit",
+      "AvanteFocus",
+      "AvanteHistory",
+      "AvanteModels",
+      "AvanteRefresh",
+      "AvanteShowRepoMap",
+      "AvanteStop",
+      "AvanteSwitchInputProvider",
+      "AvanteSwitchProvider",
+      "AvanteSwitchSelectorProvider",
+      "AvanteToggle",
+    },
     version = false,
     enabled = is_online,
     opts = function()
@@ -237,7 +300,7 @@ return {
       if require("config.utils").is_mcp_present() then
         opts.system_prompt = function()
           local hub = require("mcphub").get_hub_instance()
-          return hub:get_active_servers_prompt()
+          return hub and hub:get_active_servers_prompt() or ""
         end
         opts.custom_tools = function()
           return {
@@ -253,8 +316,7 @@ return {
       "nvim-lua/plenary.nvim",
       "MunifTanjim/nui.nvim",
       "folke/snacks.nvim",
-      --- The below dependencies are optional,
-      -- "zbirenbaum/copilot.lua", -- for providers='copilot'
+      "zbirenbaum/copilot.lua",
     },
     keys = {
       {
