@@ -35,7 +35,8 @@ git clone https://github.com/abzcoding/nv.git ~/.config/nvim
 nvim
 ```
 
-The first launch bootstraps `lazy.nvim` at the commit recorded in `lazy-lock.json`. It does not automatically install the rest of the missing plugins. Review the lockfile, then restore its exact versions from inside Neovim:
+The first launch bootstraps `lazy.nvim` at the commit recorded in `lazy-lock.json`.
+It does not automatically install the rest of the missing plugins. Review the lockfile, then restore its exact versions from inside Neovim:
 
 ```vim
 :Lazy restore
@@ -45,7 +46,9 @@ Restart Neovim after the restore finishes.
 
 ## Plugin updates and trust
 
-`lazy-lock.json` is part of this configuration and should remain under version control. Automatic update checks, local plugin specs, Lua rocks, and install-on-startup are disabled. This prevents silent dependency drift; it does not make third-party plugins safe. Plugins and their build hooks still run with your user permissions.
+`lazy-lock.json` is part of this configuration and should remain under version control.
+Automatic update checks, local plugin specs, Lua rocks, and install-on-startup are disabled.
+This prevents silent dependency drift; it does not make third-party plugins safe. Plugins and their build hooks still run with your user permissions.
 
 When updating plugins:
 
@@ -94,18 +97,23 @@ Avante's RAG service is disabled by default. Its optional RAG and web-search int
 
 ## Useful commands and mappings
 
-| Command or mapping | Action |
-| --- | --- |
-| `<leader>aE` | Enable the AI stack |
-| `<leader>aM` | Open MCPHub when configured |
-| `<leader>uT` | Toggle Undotree |
-| `<leader>gdd` | Open Diffview |
-| `<leader>gdm` | Diff against the remote's main branch |
-| `<leader>gD` | Show the current file's history |
-| `<leader>ol` | Restart the last Overseer task |
-| `:Lint` | Run the configured linter for the current buffer |
-| `:LintTerraform` | Run Terraform validation and TFLint manually |
-| `:LintTrivy` | Run Trivy manually |
+| Command or mapping | Action                                           |
+| ------------------ | ------------------------------------------------ |
+| `<leader>aE`       | Enable the AI stack                              |
+| `<leader>aM`       | Open MCPHub when configured                      |
+| `<leader>uT`       | Toggle Undotree                                  |
+| `<leader>cf`       | Format Document                                  |
+| `<leader>cs`       | Document Outline                                 |
+| `<leader>sr`       | Search and Replace                               |
+| `<leader>gdd`      | Open Diffview                                    |
+| `<leader>gdm`      | Diff against the remote's main branch            |
+| `<leader>gD`       | Show the current file's history                  |
+| `<leader>oo`       | Select and Run Overseer task                     |
+| `<leader>ol`       | Restart the last Overseer task                   |
+| `<leader>ud`       | Disable Diagnostics                              |
+| `:Lint`            | Run the configured linter for the current buffer |
+| `:LintTerraform`   | Run Terraform validation and TFLint manually     |
+| `:LintTrivy`       | Run Trivy manually                               |
 
 LazyVim provides most of the remaining mappings. Press `<leader>` and follow the WhichKey labels to discover them.
 
