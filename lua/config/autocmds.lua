@@ -62,6 +62,28 @@ aucmd("FileType", {
   end,
 })
 
+aucmd({ "BufRead", "BufNewFile" }, {
+  pattern = {
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.pfx",
+    "*.tfvars",
+    ".npmrc",
+    ".pypirc",
+    "*credentials*",
+    "*secret*",
+  },
+  callback = function()
+    vim.opt_local.undofile = false
+    vim.opt_local.swapfile = false
+    vim.opt_local.backup = false
+    vim.opt_local.writebackup = false
+  end,
+})
+
 aucmd({ "BufEnter" }, {
   pattern = { "*.csv" },
   callback = function()
