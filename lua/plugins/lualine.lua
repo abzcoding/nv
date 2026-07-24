@@ -390,7 +390,7 @@ return {
       local overseer = {
         "overseer",
         -- color = { fg = colors.blue, bg = colors.bg_dark },
-        separator = { left = "", right = "" },
+        separator = { left = "", right = "" },
         color = { bg = colors.gray2, fg = colors.blue, gui = "bold" },
       }
 
