@@ -61,4 +61,43 @@ return {
       })
     end,
   },
+  {
+    "lewis6991/gitsigns.nvim",
+    opts = {
+      signs = {
+        add = { text = "" },
+        change = { text = "" },
+        delete = { text = "" },
+        topdelete = { text = "" },
+        changedelete = { text = "" },
+        untracked = { text = "" },
+      },
+      signs_staged = {
+        add = { text = "▎" },
+        change = { text = "▎" },
+        delete = { text = "" },
+        topdelete = { text = "┃" },
+        changedelete = { text = "┃" },
+      },
+    },
+  },
+  {
+    "nvim-mini/mini.diff",
+    event = "VeryLazy",
+    opts = {
+      view = {
+        style = "sign",
+        signs = { add = "▎", change = "▎", delete = "" },
+      },
+      mappings = {
+        apply = "",
+        reset = "",
+        textobject = "",
+        goto_first = "",
+        goto_prev = "",
+        goto_next = "",
+        goto_last = "",
+      },
+    },
+  },
 }
