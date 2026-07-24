@@ -205,6 +205,13 @@ return {
             reverse_switch_windows = "<S-Tab>",
           },
         },
+        windows = {
+          sidebar_header = {
+            enabled = true,
+            align = "center",
+            rounded = true,
+          },
+        },
       }
       if vim.env.USER == "abz" then
         opts.behaviour.enable_fastapply = true

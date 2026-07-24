@@ -5,6 +5,9 @@ return {
     flavour = "mocha",
     background = { light = "latte", dark = "mocha" },
     integrations = {
+      avante = {
+        windows_sidebar_header_rounded = true,
+      },
       blink_cmp = true,
       dap = {
         enabled = true,
