@@ -1,11 +1,38 @@
 local active_task_id
 local output_win
 
+vim.api.nvim_create_autocmd("FileType", {
+  group = vim.api.nvim_create_augroup("OverseerOutputClose", { clear = true }),
+  pattern = "OverseerOutput",
+  callback = function(args)
+    vim.keymap.set("n", "q", function()
+      require("overseer").close()
+    end, { buffer = args.buf, silent = true, desc = "Close Overseer output" })
+  end,
+})
+
 local function valid(win)
   return win and vim.api.nvim_win_is_valid(win)
 end
 
+local function neotest_summary_is_open()
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].filetype == "neotest-summary" then
+      return true
+    end
+  end
+  return false
+end
+
 local function open_layout(task)
+  if neotest_summary_is_open() then
+    if task.metadata.neotest_group_id then
+      return
+    end
+    require("neotest").summary.close()
+  end
+
   active_task_id = task.id
 
   local overseer = require("overseer")

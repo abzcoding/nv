@@ -1,7 +1,17 @@
 return {
   {
     "nvim-neotest/neotest",
-    dependencies = { "nvim-neotest/nvim-nio", "mrcjkb/rustaceanvim", "alfaix/neotest-gtest" },
+    dependencies = {
+      "nvim-neotest/nvim-nio",
+      "nvim-lua/plenary.nvim",
+      "mrcjkb/rustaceanvim",
+      {
+        "alfaix/neotest-gtest",
+        -- Neovim 0.12 returns Tree-sitter captures as tables. Pin the
+        -- upstream compatibility fix until alfaix/neotest-gtest#38 lands.
+        commit = "0a40eedbb2739db7b4b981261e03b92ad4d205aa",
+      },
+    },
     lazy = true,
     config = function()
       local opts = {
@@ -9,17 +19,20 @@ return {
           require("rustaceanvim.neotest"),
           require("neotest-gtest").setup({
             root = function(file)
-              return require("neotest.lib").files.match_root_pattern("CMakeLists.txt", "compile_commands.json", ".git")(
-                file
-              )
+              return require("neotest.lib").files.match_root_pattern(
+                "CMakePresets.json",
+                "compile_commands.json",
+                ".git"
+              )(file)
             end,
             is_test_file = function(file)
-              return file:match("test.*%.cpp$") or file:match(".*_test%.cpp$")
+              local name = vim.fs.basename(file)
+              return name:match("^test_.*%.[cC][pP][pP]$") ~= nil or name:match(".*_test%.[cC][pP][pP]$") ~= nil
             end,
-            filter_dir = function(name, rel_path, root)
+            filter_dir = function(name)
               return name ~= "build" and name ~= ".git" and name ~= ".cache" and name ~= "_deps"
             end,
-            debug_adapter = "codelldb", -- or "cppdbg"
+            debug_adapter = "codelldb",
           }),
         },
         quickfix = {
@@ -28,11 +41,10 @@ return {
         status = { virtual_text = true },
         output = {
           enabled = true,
-          open_on_run = true,
+          open_on_run = false,
         },
         output_panel = {
-          enabled = true,
-          open = "botright split | resize 15",
+          enabled = false,
         },
         consumers = {
           overseer = require("neotest.consumers.overseer"),
@@ -47,9 +59,24 @@ return {
       { "<leader>tT", function() require("neotest").run.run(vim.uv.cwd()) end, desc = "Run All Test Files (Neotest)" },
       { "<leader>tr", function() require("neotest").run.run() end, desc = "Run Nearest (Neotest)" },
       { "<leader>tl", function() require("neotest").run.run_last() end, desc = "Run Last (Neotest)" },
-      { "<leader>ts", function() require("neotest").summary.toggle() end, desc = "Toggle Summary (Neotest)" },
+      { "<leader>ts", function()
+          local summary_open = false
+          for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+            local buf = vim.api.nvim_win_get_buf(win)
+            if vim.bo[buf].filetype == "neotest-summary" then
+              summary_open = true
+              break
+            end
+          end
+
+          if summary_open then
+            require("neotest").summary.close()
+          else
+            require("overseer").close()
+            require("neotest").summary.open()
+          end
+        end, desc = "Toggle Summary (Neotest)" },
       { "<leader>to", function() require("neotest").output.open({ enter = true, auto_close = true }) end, desc = "Show Output (Neotest)" },
-      { "<leader>tO", function() require("neotest").output_panel.toggle() end, desc = "Toggle Output Panel (Neotest)" },
       { "<leader>tS", function() require("neotest").run.stop() end, desc = "Stop (Neotest)" },
       { "<leader>tw", function() require("neotest").watch.toggle(vim.fn.expand("%")) end, desc = "Toggle Watch (Neotest)" },
     },

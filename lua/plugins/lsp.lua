@@ -133,6 +133,10 @@ return {
         docker = {},
       },
     }
+    local clangd_cmd = "clangd"
+    if vim.env.USER == "abz" then
+      clangd_cmd = "/opt/homebrew/opt/llvm/bin/clangd"
+    end
     opts.servers.clangd = {
       filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
       keys = {
@@ -162,7 +166,7 @@ return {
         },
       },
       cmd = {
-        "clangd",
+        clangd_cmd,
         "--all-scopes-completion",
         "--background-index",
         "--clang-tidy",
