@@ -5,12 +5,7 @@ return {
       "nvim-neotest/nvim-nio",
       "nvim-lua/plenary.nvim",
       "mrcjkb/rustaceanvim",
-      {
-        "alfaix/neotest-gtest",
-        -- Neovim 0.12 returns Tree-sitter captures as tables. Pin the
-        -- upstream compatibility fix until alfaix/neotest-gtest#38 lands.
-        commit = "0a40eedbb2739db7b4b981261e03b92ad4d205aa",
-      },
+      "abzcoding/neotest-gtest",
     },
     lazy = true,
     config = function()
