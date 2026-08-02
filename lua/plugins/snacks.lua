@@ -1,5 +1,4 @@
 local get_random_header = function()
-  math.randomseed(os.time())
   local headers = {
     [[
 ⠀⠀⣀⣀⣤⣤⣶⣶⣶⣶⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⡄⠀⠀⠀⠀⠀
@@ -134,7 +133,7 @@ There is no place like ~/
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠻⠿⠿⠛⠋⠁⠀⠀⠀⠈⠙⠛⠿⠿⠛⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ]],
   }
-  return headers[math.random(1, #headers)]
+  return headers[require("config.utils").random_index(#headers)]
 end
 
 return {

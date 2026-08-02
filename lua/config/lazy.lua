@@ -2,9 +2,22 @@ local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
   local lazyrepo = "https://github.com/folke/lazy.nvim.git"
   local lockfile = vim.fn.stdpath("config") .. "/lazy-lock.json"
-  local lock = vim.json.decode(table.concat(vim.fn.readfile(lockfile), "\n"))
-  local lazy_commit = assert(lock["lazy.nvim"] and lock["lazy.nvim"].commit, "lazy.nvim is not pinned in lazy-lock.json")
-  local clone = vim.system({ "git", "clone", "--filter=blob:none", "--no-checkout", lazyrepo, lazypath }, { text = true }):wait()
+  local ok, lock = pcall(function()
+    return vim.json.decode(table.concat(vim.fn.readfile(lockfile), "\n"))
+  end)
+  local lazy_commit = ok and type(lock) == "table" and lock["lazy.nvim"] and lock["lazy.nvim"].commit
+  if not lazy_commit then
+    vim.api.nvim_echo({
+      { "lazy.nvim is not pinned or lockfile unreadable:\n", "ErrorMsg" },
+      { lockfile .. "\n", "WarningMsg" },
+      { "Press any key to exit..." },
+    }, true, {})
+    vim.fn.getchar()
+    os.exit(1)
+  end
+  local clone = vim
+    .system({ "git", "clone", "--filter=blob:none", "--no-checkout", lazyrepo, lazypath }, { text = true })
+    :wait()
   local checkout = clone.code == 0
       and vim.system({ "git", "-C", lazypath, "checkout", "--detach", lazy_commit }, { text = true }):wait()
     or nil

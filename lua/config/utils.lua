@@ -12,6 +12,10 @@ local import_filetypes = {
   python = true,
 }
 
+local function link(group, other)
+  vim.cmd("highlight! link " .. group .. " " .. other)
+end
+
 local function import_directive(line, filetype)
   local indent = line:match("^%s*") or ""
 
@@ -362,6 +366,26 @@ end
 
 M.is_online = function()
   return vim.env.NVIM_OFFLINE ~= "1"
+end
+
+M.random_index = function(n)
+  if n <= 1 then
+    return 1
+  end
+  local t = vim.uv.hrtime()
+  local mixed = (t % 1000003) + (math.floor(t / 1000000) % 997) * 31 + vim.uv.os_getpid()
+  return mixed % n + 1
+end
+
+M.set_markview_links = function()
+  link("MarkviewHeading1", "rainbow1")
+  link("MarkviewHeading1Sign", "rainbow1")
+  link("MarkviewHeading2", "rainbow2")
+  link("MarkviewHeading2Sign", "rainbow2")
+  link("MarkviewHeading3", "rainbow3")
+  link("MarkviewHeading4", "rainbow4")
+  link("MarkviewHeading5", "rainbow5")
+  link("MarkviewHeading6", "rainbow6")
 end
 
 return M

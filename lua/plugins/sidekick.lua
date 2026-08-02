@@ -10,7 +10,7 @@ return {
     cli = {
       mux = {
         backend = "tmux",
-        enabled = true,
+        enabled = vim.env.TMUX ~= nil,
       },
     },
     nes = { enabled = is_online },

@@ -147,6 +147,9 @@ aucmd("filetype", {
   end,
 })
 
+local set_markview_links = require("config.utils").set_markview_links
+aucmd("ColorScheme", { callback = set_markview_links })
+set_markview_links()
 -- aucmd("WinEnter", {
 --   callback = function()
 --     vim.opt_local.number = true

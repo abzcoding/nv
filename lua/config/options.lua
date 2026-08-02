@@ -2,10 +2,6 @@ local opt = vim.opt
 local global = vim.g
 local cmd = vim.cmd
 
-local function link(group, other)
-  cmd("highlight! link " .. group .. " " .. other)
-end
-
 -- use new ui
 --require("vim._core.ui2").enable({})
 
@@ -135,16 +131,6 @@ else
   global.lazyvim_python_lsp = "basedpyright"
 end
 global.lazyvim_python_ruff = "ruff"
-
--- highlights
-link("MarkviewHeading1", "rainbow1")
-link("MarkviewHeading1Sign", "rainbow1")
-link("MarkviewHeading2", "rainbow2")
-link("MarkviewHeading2Sign", "rainbow2")
-link("MarkviewHeading3", "rainbow3")
-link("MarkviewHeading4", "rainbow4")
-link("MarkviewHeading5", "rainbow5")
-link("MarkviewHeading6", "rainbow6")
 
 -- fold
 opt.foldtext = "v:lua.require'config.utils'.foldtext()"

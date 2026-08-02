@@ -66,8 +66,7 @@ local mode = function()
   local mod = vim_fn.mode()
   local selector = vim.g.lualine_icon_selector
   if selector == nil then
-    math.randomseed(os.time())
-    vim.g.lualine_icon_selector = math.random(#icons.normal)
+    vim.g.lualine_icon_selector = require("config.utils").random_index(#icons.normal)
     selector = vim.g.lualine_icon_selector
   end
 
@@ -160,24 +159,26 @@ local scrollbar = {
   color = { bg = colors.bg_dark, fg = colors.red },
 }
 
-local lsp_cache = { value = nil, clients_hash = nil }
+local lsp_cache = setmetatable({}, { __mode = "k" })
+
+vim_api.nvim_create_autocmd({ "LspAttach", "LspDetach", "FileType" }, {
+  callback = function(args)
+    lsp_cache[args.buf] = nil
+  end,
+})
+
 local function getLspName()
   local bufnr = vim_api.nvim_get_current_buf()
+  local cached = lsp_cache[bufnr]
+  if cached then
+    return cached
+  end
+
   local buf_clients = vim.lsp.get_clients({ bufnr = bufnr })
 
   if next(buf_clients) == nil then
-    lsp_cache.value = "  No servers"
-    lsp_cache.clients_hash = ""
-    return lsp_cache.value
-  end
-
-  local current_hash = ""
-  for _, client in pairs(buf_clients) do
-    current_hash = current_hash .. client.name
-  end
-
-  if lsp_cache.clients_hash == current_hash and lsp_cache.value then
-    return lsp_cache.value
+    lsp_cache[bufnr] = "  No servers"
+    return lsp_cache[bufnr]
   end
 
   local buf_client_names = {}
@@ -213,9 +214,7 @@ local function getLspName()
   end
 
   local language_servers = table.concat(unique_client_names, ", ")
-  lsp_cache.value = language_servers
-  lsp_cache.clients_hash = current_hash
-
+  lsp_cache[bufnr] = language_servers
   return language_servers
 end
 

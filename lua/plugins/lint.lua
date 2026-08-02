@@ -18,27 +18,27 @@ return {
       require("lint").try_lint("trivy")
     end, { desc = "Run Trivy for the current buffer" })
   end,
-  opts = {
-    events = { "BufWritePost" },
-    linters_by_ft = {
-      ["yaml.ansible"] = { "ansible_lint" },
-      dockerfile = { "hadolint" },
-      fish = { "fish" },
-      gha = { "actionlint" },
-      sh = { "shellcheck" },
-      typescript = { "eslint_d" },
-      yaml = { "yamllint" },
-    },
-    linters = {
-      yamllint = {
-        args = {
-          "--config-file",
-          vim.fn.expand("~/.yamllint.yml"),
-          "--format",
-          "parsable",
-          "-",
-        },
+  opts = function()
+    local yamllint_config = vim.fn.expand("~/.yamllint.yml")
+    local yamllint_args = { "--format", "parsable", "-" }
+    if vim.uv.fs_stat(yamllint_config) then
+      yamllint_args = { "--config-file", yamllint_config, "--format", "parsable", "-" }
+    end
+
+    return {
+      events = { "BufWritePost" },
+      linters_by_ft = {
+        ["yaml.ansible"] = { "ansible_lint" },
+        dockerfile = { "hadolint" },
+        fish = { "fish" },
+        gha = { "actionlint" },
+        sh = { "shellcheck" },
+        typescript = { "eslint_d" },
+        yaml = { "yamllint" },
       },
-    },
-  },
+      linters = {
+        yamllint = { args = yamllint_args },
+      },
+    }
+  end,
 }

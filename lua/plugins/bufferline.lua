@@ -82,7 +82,7 @@ return {
           {
             name = "Terraform",
             matcher = function(buf)
-              return buf.name:match("%.tf") ~= nil
+              return buf.name:match("%.tf$") ~= nil or buf.name:match("%.tfvars$") ~= nil
             end,
           },
           {

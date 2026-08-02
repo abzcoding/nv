@@ -10,6 +10,8 @@ return {
       },
       formatters_by_ft = {
         bash = { "shfmt" },
+        sh = { "shfmt" },
+        zsh = { "shfmt" },
         css = { "prettierd" },
         dependabot = { "yamlfmt" },
         fish = { "fish_indent" },
