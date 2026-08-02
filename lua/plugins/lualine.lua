@@ -8,7 +8,7 @@ local vim_bo = vim.bo
 
 local conditions = {
   buffer_not_empty = function()
-    return vim_fn.empty(vim_fn.expand("%:t")) ~= 1
+    return vim_api.nvim_buf_get_name(0) ~= ""
   end,
   hide_in_width = function()
     return vim.o.columns > 80
@@ -235,10 +235,10 @@ return {
 
       local filename = {
         function()
-          local fname = vim_fn.expand("%:p")
-          local filename = vim_fn.expand("%:t")
+          local fname = vim_api.nvim_buf_get_name(0)
+          local filename = vim.fs.basename(fname)
           local ftype = vim_bo.filetype
-          local cwd = vim_api.nvim_call_function("getcwd", {})
+          local cwd = vim.uv.cwd() or ""
 
           if vim_bo.filetype == "yaml" and string.sub(filename, 1, 11) == "kubectl-edit" then
             return "kubernetes"
@@ -246,7 +246,7 @@ return {
 
           local show_name = filename
           if #cwd > 0 and #ftype > 0 then
-            if string.find(fname, cwd) then
+            if string.find(fname, cwd, 1, true) == 1 then
               local relative_path = fname:sub(#cwd + 2)
               local shortened_path = relative_path:gsub("([^/]+)/", function(dir)
                 return dir:sub(1, 1) .. "/"
@@ -349,12 +349,15 @@ return {
             return ""
           end
 
-          local fname = vim_fn.expand("%:t")
+          local fname = vim.fs.basename(vim_api.nvim_buf_get_name(0))
           if fname:sub(1, 11) ~= "kubectl-edit" then
             return ""
           end
 
           local kube_env = vim.env.KUBECONFIG
+          if not kube_env then
+            return ""
+          end
           return string.format("⎈  (%s)", env_cleanup(kube_env))
         end,
         color = { fg = colors.cyan, bg = colors.bg },
@@ -451,7 +454,7 @@ return {
           lualine_z = {},
         },
       }
-      table.insert(opts.sections.lualine_y, 3, {
+      table.insert(opts.sections.lualine_y, {
         function()
           local status = sidekick_status()
           if status and status.kind == "Normal" then

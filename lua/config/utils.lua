@@ -50,7 +50,15 @@ local function fold_suffix(line)
   return string.format(" %s ( %d %s)", marker, count, unit)
 end
 
+local run_cache = { bufnr = -1, tick = -1, first = 0, last = -1 }
+
 local function import_run_length(lnum, filetype)
+  local bufnr = api.nvim_get_current_buf()
+  local tick = api.nvim_buf_get_changedtick(bufnr)
+
+  if run_cache.bufnr == bufnr and run_cache.tick == tick and lnum >= run_cache.first and lnum <= run_cache.last then
+    return run_cache.first, run_cache.last
+  end
   local line = fn.getline(lnum)
   local indent = line:match("^%s*") or ""
   local first = lnum
@@ -76,6 +84,10 @@ local function import_run_length(lnum, filetype)
     last = last + 1
   end
 
+  run_cache.bufnr = bufnr
+  run_cache.tick = tick
+  run_cache.first = first
+  run_cache.last = last
   return first, last
 end
 
@@ -90,13 +102,13 @@ function M.foldexpr()
   end
 
   local first, last = import_run_length(lnum, filetype)
-  local minimum = filetype == "c" or filetype == "cpp" and 3 or 2
+  local minimum = (filetype == "c" or filetype == "cpp") and 3 or 2
 
   if last - first + 1 < minimum then
     return expression
   end
 
-  local level = (tonumber(expression:match("%d+")) or 0) + 1
+  local level = (tonumber(tostring(expression):match("%d+")) or 0) + 1
 
   if lnum == first then
     return ">" .. level
@@ -245,10 +257,8 @@ function M.qftf(info)
   local fname_fmt2 = "…%." .. (limit - 1) .. "s"
   local valid_fmt = "%s |%5d:%-3d|%s %s"
   local invalid_fmt = "%s"
-  local home_pattern = "^" .. vim.env.HOME
-
-  -- use luajit table.new if available
-  ret = table.new and table.new(info.end_idx - info.start_idx + 1, 0) or {}
+  local home = vim.env.HOME
+  local home_pattern = home and home ~= "" and ("^" .. vim.pesc(home)) or nil
 
   for i = info.start_idx, info.end_idx do
     local e = items[i]
