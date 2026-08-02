@@ -30,6 +30,9 @@ return {
       max_line_len = 120,
       pattern = { [[.*<(KEYWORDS)\s*:]], [[\/\/.+(audit)\s+]] },
     },
+    search = {
+      pattern = [[\b(KEYWORDS):|//\s*audit\b]],
+    },
     colors = {
       error = { "DiagnosticError" },
       warning = { "DiagnosticWarn" },

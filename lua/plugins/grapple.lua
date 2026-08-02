@@ -16,13 +16,4 @@ return {
       return keys
     end,
   },
-  {
-    "nvim-lualine/lualine.nvim",
-    opts = {
-      sections = {
-        lualine_c = { "grapple" },
-        lualine_x = { "overseer" },
-      },
-    },
-  },
 }

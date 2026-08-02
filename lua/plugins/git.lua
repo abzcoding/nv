@@ -1,5 +1,11 @@
 local get_main_branch = function()
-  local result = vim.system({ "git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD" }, { text = true }):wait()
+  local dir = vim.fs.dirname(vim.api.nvim_buf_get_name(0))
+  local result = vim
+    .system({ "git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD" }, {
+      text = true,
+      cwd = (dir ~= "" and vim.uv.fs_stat(dir)) and dir or nil,
+    })
+    :wait()
   if result.code ~= 0 then
     return ""
   end

@@ -56,7 +56,7 @@ return {
           enabled = true,
           module = "blink.cmp.sources.lsp",
           kind = "LSP",
-          min_keyword_length = 2,
+          -- min_keyword_length = 2,
           score_offset = 90,
         },
         lazydev = {
@@ -69,7 +69,7 @@ return {
           module = "blink.cmp.sources.path",
           score_offset = 25,
           fallbacks = { "snippets", "buffer" },
-          min_keyword_length = 3,
+          min_keyword_length = 2,
           opts = {
             trailing_slash = false,
             label_trailing_slash = true,

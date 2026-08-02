@@ -9,6 +9,7 @@ return {
   "neovim/nvim-lspconfig",
   opts = function(_, opts)
     opts = opts or {}
+    opts.servers = opts.servers or {}
     opts.servers["*"] = opts.servers["*"] or {}
     opts.servers["*"].keys = opts.servers["*"].keys or {}
     vim.list_extend(opts.servers["*"].keys, {
@@ -66,17 +67,16 @@ return {
         allow_incremental_sync = false,
         debounce_text_changes = 150,
       },
-      filetypes = { "yaml", "gha", "dependabot", "yaml", "yaml.docker-compose", "yaml.gitlab" },
-      on_attach = function(client, _)
-        -- yaml-language-server mis-handles incremental sync and crashes
-        -- vim.lsp.sync with assertion failures on yank/paste. Force Full sync.
-        if client.server_capabilities then
-          client.server_capabilities.textDocumentSync = {
-            openClose = true,
-            change = 1, -- 1 = Full, 2 = Incremental
-            save = { includeText = false },
-          }
-        end
+      filetypes = { "yaml", "gha", "dependabot", "yaml.docker-compose", "yaml.gitlab" },
+      -- yaml-language-server mis-handles incremental sync and crashes
+      -- vim.lsp.sync with assertion failures on yank/paste. Force Full sync
+      on_init = function(client)
+        client.server_capabilities = client.server_capabilities or {}
+        client.server_capabilities.textDocumentSync = {
+          openClose = true,
+          change = 1, -- 1 = Full, 2 = Incremental
+          save = { includeText = false },
+        }
       end,
       capabilities = {
         textDocument = {
@@ -158,7 +158,9 @@ return {
         "meson_options.txt",
       },
       capabilities = {
-        positionEncodings = { "utf-16" },
+        general = {
+          positionEncodings = { "utf-16" },
+        },
         textDocument = {
           completion = {
             editsNearCursor = true,
@@ -180,7 +182,7 @@ return {
         "--offset-encoding=utf-16",
         "--pch-storage=memory",
         "--ranking-model=heuristics",
-        "-j=12",
+        "-j=" .. math.max(2, math.min(12, #(vim.uv.cpu_info() or {}))),
       },
       before_init = function(_, config)
         local fallback_flags = { "-std=c++23", "-stdlib=libc++" }

@@ -37,15 +37,22 @@ aucmd("TermOpen", {
   callback = function()
     vim.opt_local.number = false
     vim.opt_local.relativenumber = false
+    require("config.utils").set_terminal_keymaps()
     vim.cmd("startinsert")
   end,
 })
 
 -- Codelens
-aucmd({ "BufEnter", "InsertLeave" }, {
-  pattern = { "*.rs", "*.go" },
-  callback = function()
-    vim.lsp.codelens.refresh({ bufnr = 0 })
+aucmd("LspAttach", {
+  group = vim.api.nvim_create_augroup("nv-codelens", { clear = true }),
+  callback = function(args)
+    if not vim.tbl_contains({ "rust", "go" }, vim.bo[args.buf].filetype) then
+      return
+    end
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client and client:supports_method("textDocument/codeLens") then
+      vim.lsp.codelens.enable(true, { bufnr = args.buf })
+    end
   end,
 })
 
@@ -62,7 +69,7 @@ aucmd("FileType", {
   end,
 })
 
-aucmd({ "BufRead", "BufNewFile" }, {
+aucmd({ "BufReadPre", "BufNewFile" }, {
   pattern = {
     ".env",
     ".env.*",
@@ -91,14 +98,7 @@ aucmd({ "BufEnter" }, {
   end,
 })
 
-aucmd("TermOpen", {
-  pattern = "term://*",
-  callback = function()
-    require("config.utils").set_terminal_keymaps()
-  end,
-})
-
-vim.api.nvim_del_augroup_by_name("lazyvim_wrap_spell")
+pcall(vim.api.nvim_del_augroup_by_name, "lazyvim_wrap_spell")
 
 aucmd("filetype", {
   pattern = "neotest-output",

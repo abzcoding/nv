@@ -9,15 +9,10 @@ return {
       -- Persist undo, refer https://github.com/mbbill/undotree#usage
       local undodir = vim.fn.expand("~/.undo-nvim")
 
-      if vim.fn.has("persistent_undo") == 1 then
-        if vim.fn.isdirectory(undodir) == 0 then
-          vim.notify("please create ~/.undo-nvim", vim.log.levels.WARN)
-        end
-
-        vim.opt.undodir = undodir
-        vim.opt.undofile = true
+      if vim.fn.isdirectory(undodir) == 0 then
+        vim.fs.mkdir(undodir, { mode = tonumber("700", 8) })
       end
-
+      vim.opt.undodir = undodir
       -- set layout style to 2, let g:undotree_WindowLayout = 2
       vim.g.undotree_WindowLayout = 2
     end,

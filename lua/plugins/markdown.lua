@@ -192,7 +192,9 @@ local reference_definitions = {
 
 return {
   "OXY2DEV/markview.nvim",
-  event = "VeryLazy",
+  -- event = "VeryLazy",
+  ft = { "markdown", "Avante", "codecompanion" },
+  cmd = "Markview",
   dependencies = {
     "nvim-treesitter/nvim-treesitter",
   },

@@ -23,10 +23,7 @@ map("n", "<leader>ol", "<cmd>OverseerRestartLast<cr>", { desc = "Overseer Run La
 
 -- comment line
 map("n", "<leader>/", "<cmd>normal gcc<cr>", { desc = "Comment" })
-map("v", "<leader>/", "<cmd>normal gcc<cr>", { desc = "Comment" })
-
--- quick clear highlighting
-map("n", "<C-[>", "<cmd>nohlsearch<cr>", opts)
+map("x", "<leader>/", "gc", { remap = true, desc = "Comment" })
 
 -- next quickfix item
 map("n", "]q", ":cnext<cr>zz", { noremap = true, silent = true, desc = "next quickfix" })
@@ -44,15 +41,20 @@ map("n", "<leader>qw", ":q<cr>", { noremap = true, silent = true, desc = "quit w
 map("n", "<leader><bs>", ":bd<cr>", { noremap = true, silent = true, desc = "delete buffer" })
 
 -- resume telescope after exiting
-map("n", "<leader>;", "<cmd>lua require('telescope.builtin').resume(require('telescope.themes').get_ivy({}))<cr>")
+map(
+  "n",
+  "<leader>;",
+  "<cmd>lua require('telescope.builtin').resume(require('telescope.themes').get_ivy({}))<cr>",
+  { noremap = true, silent = true, desc = "Resume Telescope" }
+)
 
 -- move line up and down
-map("v", "J", ":m '>+1<CR>gv==kgvo<esc>=kgvo", { desc = "move highlighted text down" })
-map("v", "K", ":m '<-2<CR>gv==jgvo<esc>=jgvo", { desc = "move highlighted text up" })
+map("x", "J", ":m '>+1<CR>gv==kgvo<esc>=kgvo", { desc = "move highlighted text down" })
+map("x", "K", ":m '<-2<CR>gv==jgvo<esc>=jgvo", { desc = "move highlighted text up" })
 
 -- better indenting
-map("v", "<", "<gv", { desc = "Indent left" })
-map("v", ">", ">gv", { desc = "Indent right" })
+map("x", "<", "<gv", { desc = "Indent left" })
+map("x", ">", ">gv", { desc = "Indent right" })
 
 -- floating terminal
 map("n", "<c-/>", function()
@@ -75,28 +77,36 @@ map(
   "<cmd>lua require 'gitsigns'.nav_hunk('prev', {navigation_message = false})<cr>",
   { noremap = true, silent = true, desc = "Prev Hunk" }
 )
-map(
-  "n",
-  "<leader>gr",
-  "<cmd>lua require 'gitsigns'.reset_hunk()<cr>",
-  { noremap = true, silent = true, desc = "Reset Hunk" }
-)
+map("n", "<leader>gr", function()
+  require("gitsigns").reset_hunk()
+end, { desc = "Reset Hunk" })
+
+map("x", "<leader>gr", function()
+  require("gitsigns").reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+end, { desc = "Reset Hunk (selection)" })
 
 -- diff
 -- map("n", "<leader>ds", "<cmd>windo diffthis<cr>", { desc = "Diff Split" })
 
 -- escape
-map("i", "jk", "<ESC>:w<CR>", opts)
+map("i", "jk", function()
+  vim.cmd("stopinsert")
+  if vim.bo.buftype == "" and vim.api.nvim_buf_get_name(0) ~= "" and vim.bo.modified then
+    vim.cmd("silent! write")
+  end
+end, opts)
 
 -- buffers
-map("n", "X", ":bdelete!<CR>", opts)
+map("n", "X", function()
+  Snacks.bufdelete()
+end, { desc = "delete buffer" })
 map("n", "L", ":BufferLineCycleNext<CR>", opts)
 map("n", "H", ":BufferLineCyclePrev<CR>", opts)
 map("n", "gl", vim.diagnostic.open_float, opts)
 map("n", ";p", '"0p', opts)
 map("n", ";c", '"_c', opts)
 map("n", ";d", '"_d', opts)
-map("n", "<esc>", ":set hlsearch!<CR>")
+map("n", "<esc>", "<cmd>nohlsearch<cr>", opts)
 
 -- code
 map("n", "<leader>uv", function()
@@ -118,7 +128,7 @@ map("n", "<leader>st", LazyVim.pick("live_grep"), opts)
 -- map("n", "<leader>sT", "<cmd>TodoTelescope<cr>", opts)
 map("n", "<leader>sL", function()
   require("config.telescope").multigrep()
-end, opts)
+end, { noremap = true, silent = true, desc = "Multi Grep" })
 map("n", "<leader>cs", "<cmd>Outline<cr>", opts)
 map("n", "<c-`>", function()
   Snacks.terminal()
@@ -134,22 +144,34 @@ map("n", "<CR>", function()
   local cur_win = vim.api.nvim_get_current_win()
   local buf = vim.api.nvim_win_get_buf(cur_win)
 
-  if vim.bo[buf].buftype ~= "quickfix" then
-    vim.api.nvim_set_var("non_float_total", 0)
-    vim.cmd("silent! windo if &buftype != 'nofile' | let g:non_float_total += 1 | endif")
-    vim.api.nvim_set_current_win(cur_win or 0)
-    if vim.api.nvim_get_var("non_float_total") == 1 then
-      if vim.fn.tabpagenr("$") == 1 then
-        return
+  if vim.bo[buf].buftype == "quickfix" then
+    vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "nt")
+    return
+  end
+
+  local count = 0
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    if vim.api.nvim_win_get_config(win).relative == "" then
+      local b = vim.api.nvim_win_get_buf(win)
+      if vim.bo[b].buftype ~= "nofile" then
+        count = count + 1
       end
+    end
+  end
+
+  if count == 1 then
+    if vim.fn.tabpagenr("$") > 1 then
       vim.cmd("tabclose")
-    else
-      local last_cursor = vim.api.nvim_win_get_cursor(0)
-      pcall(vim.cmd, "tabedit %:p")
-      vim.api.nvim_win_set_cursor(0, last_cursor)
     end
     return
   end
 
-  vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "nt")
+  if vim.api.nvim_buf_get_name(buf) == "" then
+    vim.notify("Buffer has no file to open in a new tab", vim.log.levels.WARN)
+    return
+  end
+
+  local last_cursor = vim.api.nvim_win_get_cursor(0)
+  vim.cmd("tabedit %:p")
+  vim.api.nvim_win_set_cursor(0, last_cursor)
 end, opts)

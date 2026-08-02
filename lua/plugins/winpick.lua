@@ -11,7 +11,7 @@ return {
   end,
   keys = {
     {
-      ",w",
+      ";w",
       function()
         local picked_window_id = require("window-picker").pick_window() or vim.api.nvim_get_current_win()
         vim.api.nvim_set_current_win(picked_window_id)
@@ -20,15 +20,23 @@ return {
       desc = "Pick a window",
     },
     {
-      ",s",
+      ";s",
       function()
         local window = require("window-picker").pick_window()
-        local target_buffer = vim.fn.winbufnr(window)
-        vim.api.nvim_win_set_buf(window, 0)
-        vim.api.nvim_win_set_buf(0, target_buffer)
+        if not window or not vim.api.nvim_win_is_valid(window) then
+          return
+        end
+        local current = vim.api.nvim_get_current_win()
+        if window == current then
+          return
+        end
+        local current_buffer = vim.api.nvim_win_get_buf(current)
+        local target_buffer = vim.api.nvim_win_get_buf(window)
+        vim.api.nvim_win_set_buf(window, current_buffer)
+        vim.api.nvim_win_set_buf(current, target_buffer)
       end,
       mode = "n",
-      desc = "Pick a window",
+      desc = "Swap window",
     },
   },
 }
