@@ -60,7 +60,7 @@ local import_fold_group = vim.api.nvim_create_augroup("import-folds", { clear = 
 
 aucmd("FileType", {
   group = import_fold_group,
-  pattern = { "c", "cpp", "go", "rust", "python" },
+  pattern = { "c", "cpp", "go", "rust", "python", "zig" },
   callback = function()
     _G.NvFoldExpr = _G.NvFoldExpr or require("config.utils").foldexpr
 
@@ -100,7 +100,7 @@ aucmd({ "BufEnter" }, {
 
 pcall(vim.api.nvim_del_augroup_by_name, "lazyvim_wrap_spell")
 
-aucmd("filetype", {
+aucmd("FileType", {
   pattern = "neotest-output",
   callback = function()
     -- Open file under cursor in the widest window available.

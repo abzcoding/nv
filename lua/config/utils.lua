@@ -4,50 +4,72 @@ local api = vim.api
 local fn = vim.fn
 local ts = vim.treesitter
 
-local import_filetypes = {
-  c = true,
-  cpp = true,
-  go = true,
-  rust = true,
-  python = true,
+local import_patterns = {
+  c = {
+    { "^%s*#%s*include%f[%W]", "#include", "@keyword.directive" },
+  },
+  go = {
+    { "^%s*import%f[%W]", "import", "@keyword.import" },
+  },
+  rust = {
+    { "^%s*pub%s+use%f[%W]", "pub use", "@keyword.import" },
+    { "^%s*use%f[%W]", "use", "@keyword.import" },
+  },
+  python = {
+    { "^%s*from%s+[%w_%.]+%s+import%f[%W]", "from … import", "@keyword.import" },
+    { "^%s*import%f[%W]", "import", "@keyword.import" },
+  },
 }
 
+import_patterns.cpp = import_patterns.c
+
+local import_minimum = { c = 3, cpp = 3 }
+
 local function import_directive(line, filetype)
-  local indent = line:match("^%s*") or ""
+  local patterns = import_patterns[filetype]
 
-  if filetype == "c" or filetype == "cpp" then
-    if line:match("^%s*#%s*include%f[%W]") then
-      return indent .. "#include", "@keyword.directive"
-    end
-  elseif filetype == "go" then
-    if line:match("^%s*import%f[%W]") then
-      return indent .. "import", "@keyword.import"
-    end
-  elseif filetype == "rust" then
-    if line:match("^%s*pub%s+use%f[%W]") then
-      return indent .. "pub use", "@keyword.import"
-    end
+  if not patterns then
+    return
+  end
 
-    if line:match("^%s*use%f[%W]") then
-      return indent .. "use", "@keyword.import"
-    end
-  elseif filetype == "python" then
-    if line:match("^%s*from%s+[%w_%.]+%s+import%f[%W]") then
-      return indent .. "from … import", "@keyword.import"
-    end
-
-    if line:match("^%s*import%f[%W]") then
-      return indent .. "import", "@keyword.import"
+  for _, entry in ipairs(patterns) do
+    if line:match(entry[1]) then
+      return (line:match("^%s*") or "") .. entry[2], entry[3]
     end
   end
 end
 
-local function fold_suffix(line)
-  local count = vim.v.foldend - vim.v.foldstart
-  local marker = line:match("{%s*$") and "... }" or "{ ... }"
+local function fold_suffix(line, marker, bracket)
+  local count = vim.v.foldend - vim.v.foldstart + 1
   local unit = count == 1 and "line" or "lines"
+  local tail = string.format(" ( %d %s)", count, unit)
 
-  return string.format(" %s ( %d %s)", marker, count, unit)
+  bracket = bracket or "Folded"
+
+  if marker then
+    return { { " " .. marker, "Folded" }, { tail, "Folded" } }
+  end
+
+  if line:match(":%s*$") then
+    return { { " …", "Folded" }, { tail, "Folded" } }
+  end
+
+  -- the opening brace is already on screen, only close it
+  if line:match("{%s*$") then
+    return {
+      { " ... ", "Folded" },
+      { "}", bracket },
+      { tail, "Folded" },
+    }
+  end
+
+  return {
+    { " ", "Folded" },
+    { "{", bracket },
+    { " ... ", "Folded" },
+    { "}", bracket },
+    { tail, "Folded" },
+  }
 end
 
 local run_cache = { bufnr = -1, tick = -1, first = 0, last = -1 }
@@ -74,7 +96,7 @@ local function import_run_length(lnum, filetype)
     first = first - 1
   end
 
-  while last < fn.line("$") do
+  while last < api.nvim_buf_line_count(bufnr) do
     local following = fn.getline(last + 1)
 
     if not import_directive(following, filetype) or (following:match("^%s*") or "") ~= indent then
@@ -91,98 +113,76 @@ local function import_run_length(lnum, filetype)
   return first, last
 end
 
-function M.foldexpr()
-  local lnum = vim.v.lnum
-  local filetype = vim.bo.filetype
-  local line = fn.getline(lnum)
-  local expression = ts.foldexpr(lnum)
+local function paren_delta(line)
+  local _, open = line:gsub("[%(%[]", "")
+  local _, close = line:gsub("[%)%]]", "")
 
-  if not import_filetypes[filetype] or not import_directive(line, filetype) then
-    return expression
-  end
-
-  local first, last = import_run_length(lnum, filetype)
-  local minimum = (filetype == "c" or filetype == "cpp") and 3 or 2
-
-  if last - first + 1 < minimum then
-    return expression
-  end
-
-  local level = (tonumber(tostring(expression):match("%d+")) or 0) + 1
-
-  if lnum == first then
-    return ">" .. level
-  end
-
-  if lnum == last then
-    return "<" .. level
-  end
-
-  return tostring(level)
+  return open - close
 end
 
-function M.foldtext()
-  local bufnr = api.nvim_get_current_buf()
-  local start_line = vim.v.foldstart
-  local row = start_line - 1
-  local line = fn.getline(start_line)
-  local filetype = vim.bo[bufnr].filetype
+local function fold_level(expression)
+  return math.max(tonumber(tostring(expression):match("%-?%d+")) or 0, 0)
+end
 
-  if line == "" then
-    return fn.foldtext()
+local function signature_rows(start_line, end_line)
+  local rows = { start_line }
+  local depth = paren_delta(fn.getline(start_line))
+
+  while depth > 0 and rows[#rows] < end_line and #rows < 16 do
+    local lnum = rows[#rows] + 1
+
+    rows[#rows + 1] = lnum
+    depth = depth + paren_delta(fn.getline(lnum))
   end
 
-  local directive, highlight = import_directive(line, filetype)
-
-  if directive then
-    return {
-      { directive, highlight },
-      { fold_suffix(line), "Folded" },
-    }
+  local last = rows[#rows]
+  if last < end_line and not fn.getline(last):match("[{:]%s*$") and fn.getline(last + 1):match("^%s*{") then
+    rows[#rows + 1] = last + 1
   end
 
-  local lang = ts.language.get_lang(filetype)
-  if not lang then
-    return fn.foldtext()
+  return rows
+end
+
+local function needs_space(previous, current)
+  if previous:match("[%(%[{]%s*$") then
+    return false
   end
 
-  local ok, parser = pcall(ts.get_parser, bufnr, lang, {
-    error = false,
-  })
-
-  if not ok or not parser then
-    return fn.foldtext()
+  if current:match("^%s*[%)%]},;]") then
+    return false
   end
 
-  local query = ts.query.get(parser:lang(), "highlights")
-  if not query then
-    return fn.foldtext()
-  end
+  return true
+end
 
-  local parsed, trees = pcall(parser.parse, parser, {
-    row,
-    row + 1,
-  })
+local ignored_captures = {
+  spell = true,
+  nospell = true,
+  conceal = true,
+}
 
-  local tree = parsed and trees and trees[1]
-  if not tree then
-    return fn.foldtext()
-  end
-
+-- treesitter-highlighted chunks for `text` (row `row`), starting at `start_col`
+local function append_chunks(result, query, root, bufnr, row, text, start_col)
   local captures = {}
   local seen = {}
 
-  for id, node in query:iter_captures(tree:root(), bufnr, row, row + 1) do
-    local start_row, start_col, end_row, end_col = node:range()
+  for id, node, metadata in query:iter_captures(root, bufnr, row, row + 1) do
+    local name = query.captures[id]
+    local start_row, node_start, end_row, node_end = node:range()
 
-    if start_row == row and end_row == row then
-      local key = start_col .. ":" .. end_col
+    if start_row == row and end_row == row and not ignored_captures[name] then
+      local key = node_start .. ":" .. node_end
+      local priority = tonumber(metadata.priority or (metadata[id] or {}).priority) or 100
+      local existing = seen[key]
 
-      seen[key] = {
-        start_col = start_col,
-        end_col = end_col,
-        highlight = "@" .. query.captures[id],
-      }
+      if not existing or priority >= existing.priority then
+        seen[key] = {
+          start_col = node_start,
+          end_col = node_end,
+          highlight = "@" .. name,
+          priority = priority,
+        }
+      end
     end
   end
 
@@ -198,38 +198,158 @@ function M.foldtext()
     return a.start_col < b.start_col
   end)
 
-  local result = {}
-  local position = 0
+  local position = start_col
 
   for _, capture in ipairs(captures) do
-    if capture.start_col >= position then
+    if capture.start_col >= position and capture.start_col < #text then
+      local stop = math.min(capture.end_col, #text)
       if capture.start_col > position then
-        result[#result + 1] = {
-          line:sub(position + 1, capture.start_col),
-          "Folded",
-        }
+        result[#result + 1] = { text:sub(position + 1, capture.start_col), "Folded" }
       end
 
       result[#result + 1] = {
-        line:sub(capture.start_col + 1, capture.end_col),
+        text:sub(capture.start_col + 1, stop),
         capture.highlight,
       }
 
-      position = capture.end_col
+      position = stop
     end
   end
 
-  if position < #line then
-    result[#result + 1] = {
-      line:sub(position + 1),
-      "Folded",
-    }
+  if position < #text then
+    result[#result + 1] = { text:sub(position + 1), "Folded" }
+  end
+end
+
+local function bracket_highlight(result)
+  for index = #result, 1, -1 do
+    local text, highlight = result[index][1], result[index][2]
+
+    -- if text:match("^%s*[%(%)%[%]{}]%s*$") and highlight ~= "Folded" then
+    if text:match("^%s*[{}]%s*$") and highlight ~= "Folded" then
+      return highlight
+    end
+  end
+end
+
+local function signature_tail(line)
+  if not line:match("^%s*[%)%]]") then
+    return false
   end
 
-  result[#result + 1] = {
-    fold_suffix(line),
-    "Folded",
-  }
+  return line:match("{%s*$") ~= nil or line:match(":%s*$") ~= nil
+end
+
+function M.foldexpr()
+  local lnum = vim.v.lnum
+  local filetype = vim.bo.filetype
+  local line = fn.getline(lnum)
+  local expression = tostring(ts.foldexpr(lnum))
+
+  if lnum > 1 and expression:sub(1, 1) == ">" and signature_tail(line) then
+    local level = fold_level(expression)
+
+    if fold_level(ts.foldexpr(lnum - 1)) >= level then
+      expression = tostring(level)
+    end
+  end
+
+  if not import_directive(line, filetype) then
+    return expression
+  end
+
+  local first, last = import_run_length(lnum, filetype)
+  local minimum = import_minimum[filetype] or 2
+
+  if last - first + 1 < minimum then
+    return expression
+  end
+
+  local level = fold_level(expression) + 1
+
+  if lnum == first then
+    return ">" .. level
+  end
+
+  if lnum == last then
+    return "<" .. level
+  end
+
+  return tostring(level)
+end
+
+function M.foldtext()
+  local bufnr = api.nvim_get_current_buf()
+  local start_line = vim.v.foldstart
+  local line = fn.getline(start_line)
+  local filetype = vim.bo[bufnr].filetype
+
+  if line == "" then
+    return fn.foldtext()
+  end
+
+  local directive, highlight = import_directive(line, filetype)
+
+  if directive then
+    local chunks = { { directive, highlight } }
+    vim.list_extend(chunks, fold_suffix(line, "…"))
+    return chunks
+  end
+
+  local rows = signature_rows(start_line, vim.v.foldend)
+  local last_line = fn.getline(rows[#rows])
+  local lang = ts.language.get_lang(filetype)
+  if not lang then
+    return fn.foldtext()
+  end
+
+  local parser = ts.get_parser(bufnr, lang, { error = false })
+
+  if not parser then
+    return fn.foldtext()
+  end
+
+  local query = ts.query.get(lang, "highlights")
+  if not query then
+    return fn.foldtext()
+  end
+
+  local parsed, trees = pcall(parser.parse, parser, {
+    rows[1] - 1,
+    rows[#rows],
+  })
+
+  local tree = parsed and trees and trees[1]
+  if not tree then
+    return fn.foldtext()
+  end
+
+  local root = tree:root()
+  local result = {}
+
+  for index, lnum in ipairs(rows) do
+    local text = fn.getline(lnum):gsub("%s+$", "")
+    local start_col = 0
+
+    -- `client_stream: Io.net.Stream,` + `) void {` → drop the trailing comma
+    local following = rows[index + 1] and fn.getline(rows[index + 1])
+
+    if following and following:match("^%s*[%)%]}]") then
+      text = text:gsub(",$", "")
+    end
+
+    if index > 1 then
+      start_col = #(text:match("^%s*") or "")
+
+      if needs_space(fn.getline(rows[index - 1]), text) then
+        result[#result + 1] = { " ", "Folded" }
+      end
+    end
+
+    append_chunks(result, query, root, bufnr, lnum - 1, text, start_col)
+  end
+
+  vim.list_extend(result, fold_suffix(last_line, nil, bracket_highlight(result)))
 
   return result
 end
@@ -263,6 +383,9 @@ function M.qftf(info)
   for i = info.start_idx, info.end_idx do
     local e = items[i]
     local str
+    if not e then
+      break
+    end
 
     if e.valid == 1 then
       local fname = ""
@@ -270,7 +393,7 @@ function M.qftf(info)
         fname = api.nvim_buf_get_name(e.bufnr)
         if fname == "" then
           fname = "[No Name]"
-        else
+        elseif home_pattern then
           fname = fname:gsub(home_pattern, "~")
         end
 
@@ -281,8 +404,8 @@ function M.qftf(info)
         end
       end
 
-      local lnum = e.lnum > 99999 and "inf" or e.lnum
-      local col = e.col > 999 and "inf" or e.col
+      local lnum = e.lnum > 99999 and -1 or e.lnum
+      local col = e.col > 999 and -1 or e.col
       local qtype = e.type == "" and "" or " " .. e.type:sub(1, 1):upper()
 
       str = string.format(valid_fmt, fname, lnum, col, qtype, e.text)
@@ -357,7 +480,7 @@ M.kind_icons = {
 }
 
 M.is_mcp_present = function()
-  return M.is_online() and vim.uv.fs_stat(vim.fn.expand("~/.mcpservers.json")) ~= nil
+  return M.is_online() and vim.uv.fs_stat(fn.expand("~/.mcpservers.json")) ~= nil
 end
 
 M.is_online = function()

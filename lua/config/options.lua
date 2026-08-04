@@ -148,6 +148,7 @@ link("MarkviewHeading6", "rainbow6")
 
 -- fold
 opt.foldtext = "v:lua.require'config.utils'.foldtext()"
+opt.foldminlines = 2
 
 -- quickfix
 opt.qftf = "{info -> v:lua.require'config.utils'.qftf(info)}"
