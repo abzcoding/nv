@@ -39,37 +39,20 @@ local function import_directive(line, filetype)
   end
 end
 
-local function fold_suffix(line, marker, bracket)
+local function fold_suffix(line, marker)
   local count = vim.v.foldend - vim.v.foldstart + 1
   local unit = count == 1 and "line" or "lines"
-  local tail = string.format(" ( %d %s)", count, unit)
-
-  bracket = bracket or "Folded"
-
-  if marker then
-    return { { " " .. marker, "Folded" }, { tail, "Folded" } }
+  if not marker then
+    if line:match(":%s*$") then
+      marker = "…"
+    elseif line:match("{%s*$") then
+      marker = "... }"
+    else
+      marker = "{ ... }"
+    end
   end
 
-  if line:match(":%s*$") then
-    return { { " …", "Folded" }, { tail, "Folded" } }
-  end
-
-  -- the opening brace is already on screen, only close it
-  if line:match("{%s*$") then
-    return {
-      { " ... ", "Folded" },
-      { "}", bracket },
-      { tail, "Folded" },
-    }
-  end
-
-  return {
-    { " ", "Folded" },
-    { "{", bracket },
-    { " ... ", "Folded" },
-    { "}", bracket },
-    { tail, "Folded" },
-  }
+  return { { string.format(" %s ( %d %s)", marker, count, unit), "Folded" } }
 end
 
 local run_cache = { bufnr = -1, tick = -1, first = 0, last = -1 }
@@ -221,16 +204,27 @@ local function append_chunks(result, query, root, bufnr, row, text, start_col)
   end
 end
 
-local function bracket_highlight(result)
-  for index = #result, 1, -1 do
-    local text, highlight = result[index][1], result[index][2]
+local function dim_trailing_brace(result)
+  local chunk = result[#result]
 
-    -- if text:match("^%s*[%(%)%[%]{}]%s*$") and highlight ~= "Folded" then
-    if text:match("^%s*[{}]%s*$") and highlight ~= "Folded" then
-      return highlight
-    end
+  if not chunk or chunk[2] == "Folded" then
+    return
+  end
+
+  local head, brace = chunk[1]:match("^(.-)([{:])$")
+
+  if not brace then
+    return
+  end
+
+  if head == "" then
+    chunk[2] = "Folded"
+  else
+    chunk[1] = head
+    result[#result + 1] = { brace, "Folded" }
   end
 end
+
 
 local function signature_tail(line)
   if not line:match("^%s*[%)%]]") then
@@ -349,7 +343,8 @@ function M.foldtext()
     append_chunks(result, query, root, bufnr, lnum - 1, text, start_col)
   end
 
-  vim.list_extend(result, fold_suffix(last_line, nil, bracket_highlight(result)))
+  dim_trailing_brace(result)
+  vim.list_extend(result, fold_suffix(last_line))
 
   return result
 end
