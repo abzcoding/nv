@@ -12,8 +12,12 @@ local import_patterns = {
     { "^%s*import%f[%W]", "import", "@keyword.import" },
   },
   rust = {
-    { "^%s*pub%s+use%f[%W]", "pub use", "@keyword.import" },
-    { "^%s*use%f[%W]", "use", "@keyword.import" },
+    { "^%s*pub%s*%b()%s*use%f[%W]", "pub use", "@keyword.import", "use" },
+    { "^%s*pub%s+use%f[%W]", "pub use", "@keyword.import", "use" },
+    { "^%s*use%f[%W]", "use", "@keyword.import", "use" },
+    { "^%s*pub%s*%b()%s*mod%s+[%w_]+%s*;", "pub mod", "@keyword.import", "mod" },
+    { "^%s*pub%s+mod%s+[%w_]+%s*;", "pub mod", "@keyword.import", "mod" },
+    { "^%s*mod%s+[%w_]+%s*;", "mod", "@keyword.import", "mod" },
   },
   python = {
     { "^%s*from%s+[%w_%.]+%s+import%f[%W]", "from … import", "@keyword.import" },
@@ -34,7 +38,7 @@ local function import_directive(line, filetype)
 
   for _, entry in ipairs(patterns) do
     if line:match(entry[1]) then
-      return (line:match("^%s*") or "") .. entry[2], entry[3]
+      return (line:match("^%s*") or "") .. entry[2], entry[3], entry[4] or entry[2]
     end
   end
 end
@@ -43,12 +47,10 @@ local function fold_suffix(line, marker)
   local count = vim.v.foldend - vim.v.foldstart + 1
   local unit = count == 1 and "line" or "lines"
   if not marker then
-    if line:match(":%s*$") then
-      marker = "…"
-    elseif line:match("{%s*$") then
+    if line:match("{%s*$") then
       marker = "... }"
     else
-      marker = "{ ... }"
+      marker = "…"
     end
   end
 
@@ -66,13 +68,14 @@ local function import_run_length(lnum, filetype)
   end
   local line = fn.getline(lnum)
   local indent = line:match("^%s*") or ""
+  local _, _, group = import_directive(line, filetype)
   local first = lnum
   local last = lnum
 
   while first > 1 do
     local previous = fn.getline(first - 1)
-
-    if not import_directive(previous, filetype) or (previous:match("^%s*") or "") ~= indent then
+    local _, _, other = import_directive(previous, filetype)
+    if other ~= group or (previous:match("^%s*") or "") ~= indent then
       break
     end
 
@@ -81,8 +84,8 @@ local function import_run_length(lnum, filetype)
 
   while last < api.nvim_buf_line_count(bufnr) do
     local following = fn.getline(last + 1)
-
-    if not import_directive(following, filetype) or (following:match("^%s*") or "") ~= indent then
+    local _, _, other = import_directive(following, filetype)
+    if other ~= group or (following:match("^%s*") or "") ~= indent then
       break
     end
 
@@ -111,19 +114,20 @@ local function signature_rows(start_line, end_line)
   local rows = { start_line }
   local depth = paren_delta(fn.getline(start_line))
 
-  while depth > 0 and rows[#rows] < end_line and #rows < 16 do
+  while depth > 0 and rows[#rows] < end_line and #rows < 6 do
     local lnum = rows[#rows] + 1
 
     rows[#rows + 1] = lnum
     depth = depth + paren_delta(fn.getline(lnum))
   end
 
+  local truncated = depth > 0
   local last = rows[#rows]
   if last < end_line and not fn.getline(last):match("[{:]%s*$") and fn.getline(last + 1):match("^%s*{") then
     rows[#rows + 1] = last + 1
   end
 
-  return rows
+  return rows, truncated
 end
 
 local function needs_space(previous, current)
@@ -225,9 +229,8 @@ local function dim_trailing_brace(result)
   end
 end
 
-
 local function signature_tail(line)
-  if not line:match("^%s*[%)%]]") then
+  if not line:match("^%s*[%)%]}]") then
     return false
   end
 
@@ -290,7 +293,7 @@ function M.foldtext()
     return chunks
   end
 
-  local rows = signature_rows(start_line, vim.v.foldend)
+  local rows, truncated = signature_rows(start_line, vim.v.foldend)
   local last_line = fn.getline(rows[#rows])
   local lang = ts.language.get_lang(filetype)
   if not lang then
@@ -325,10 +328,9 @@ function M.foldtext()
     local text = fn.getline(lnum):gsub("%s+$", "")
     local start_col = 0
 
-    -- `client_stream: Io.net.Stream,` + `) void {` → drop the trailing comma
     local following = rows[index + 1] and fn.getline(rows[index + 1])
 
-    if following and following:match("^%s*[%)%]}]") then
+    if not following or following:match("^%s*[%)%]}]") then
       text = text:gsub(",$", "")
     end
 
@@ -344,7 +346,7 @@ function M.foldtext()
   end
 
   dim_trailing_brace(result)
-  vim.list_extend(result, fold_suffix(last_line))
+  vim.list_extend(result, fold_suffix(last_line, truncated and "󱗾" or nil))
 
   return result
 end
