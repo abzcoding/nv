@@ -57,6 +57,43 @@ local function fold_suffix(line, marker)
   return { { string.format(" %s ( %d %s)", marker, count, unit), "Folded" } }
 end
 
+local function truncate_chunks(chunks, max_width)
+  local truncated = {}
+  local remaining = max_width
+
+  for _, chunk in ipairs(chunks) do
+    local text, highlight = chunk[1], chunk[2]
+    local width = fn.strdisplaywidth(text)
+
+    if width <= remaining then
+      truncated[#truncated + 1] = chunk
+      remaining = remaining - width
+    else
+      local characters = fn.strchars(text)
+
+      while characters > 0 and fn.strdisplaywidth(fn.strcharpart(text, 0, characters)) > remaining do
+        characters = characters - 1
+      end
+
+      if characters > 0 then
+        truncated[#truncated + 1] = { fn.strcharpart(text, 0, characters), highlight }
+      end
+
+      return truncated, true
+    end
+  end
+
+  return truncated, false
+end
+
+local function foldtext_width()
+  local winid = api.nvim_get_current_win()
+  local wininfo = fn.getwininfo(winid)[1] or {}
+  local available_width = api.nvim_win_get_width(winid) - (wininfo.textoff or 0)
+
+  return math.max(math.min(available_width, 180), 1)
+end
+
 local run_cache = { bufnr = -1, tick = -1, first = 0, last = -1 }
 
 local function import_run_length(lnum, filetype)
@@ -346,9 +383,14 @@ function M.foldtext()
   end
 
   dim_trailing_brace(result)
-  vim.list_extend(result, fold_suffix(last_line, truncated and "󱗾" or nil))
+  local regular_suffix = fold_suffix(last_line, truncated and "󱗾" or nil)
+  local shortened_suffix = fold_suffix(last_line, "󱗾")
+  local suffix_width = math.max(fn.strdisplaywidth(regular_suffix[1][1]), fn.strdisplaywidth(shortened_suffix[1][1]))
+  local visible, width_truncated = truncate_chunks(result, foldtext_width() - suffix_width)
 
-  return result
+  vim.list_extend(visible, width_truncated and shortened_suffix or regular_suffix)
+
+  return visible
 end
 
 function M.toggle_theme()
