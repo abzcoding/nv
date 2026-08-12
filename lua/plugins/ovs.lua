@@ -1,6 +1,6 @@
 return {
-  "stevearc/overseer.nvim",
-
+  "abzcoding/overseer.nvim",
+  branch = "feat/zig",
   opts = {
     strategy = "jobstart",
 
