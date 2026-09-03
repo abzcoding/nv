@@ -56,6 +56,7 @@ opt.exrc = false -- Disallow project local vimrc files, see :h exrc
 opt.modeline = false
 opt.confirm = true -- make vim prompt me to save before doing destructive things
 opt.autowriteall = true -- automatically :write before running commands and changing files
+opt.autoread = true -- reload externally changed files (0.13: fs watchers, realtime)
 global.editorconfig = true
 global.lazyvim_blink_main = true
 opt.backupskip = "/tmp/*,$TMPDIR/*,$TMP/*,$TEMP/*,*/shm/*,/private/var/*,.vault.vim"

@@ -140,6 +140,12 @@ map("n", "<A-Down>", ":resize -2<CR>", opts)
 map("n", "<A-Left>", ":vertical resize +2<CR>", opts)
 map("n", "<A-Right>", ":vertical resize -2<CR>", opts)
 
+-- i've remapped my tmux to <C-a>
+if vim.env.TMUX then
+  map({ "n", "x" }, "<C-b>", "<C-a>", { desc = "Increment number" })
+  map("x", "g<C-b>", "g<C-a>", { desc = "Increment paragraph" })
+end
+
 map("n", "<CR>", function()
   local cur_win = vim.api.nvim_get_current_win()
   local buf = vim.api.nvim_win_get_buf(cur_win)
