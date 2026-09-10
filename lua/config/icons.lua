@@ -1,9 +1,9 @@
 return {
   diagnostics = {
-    Error = "",
-    Warn = "",
-    Info = "",
-    Hint = "󰌵",
+    Error = "",
+    Warn = "",
+    Info = "󰐂", --  
+    Hint = "", --  󰐂  
   },
   kinds = {
     Array = "",

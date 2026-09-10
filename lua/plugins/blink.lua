@@ -55,7 +55,6 @@ return {
           name = "lsp",
           enabled = true,
           module = "blink.cmp.sources.lsp",
-          kind = "LSP",
           -- min_keyword_length = 2,
           score_offset = 90,
         },
