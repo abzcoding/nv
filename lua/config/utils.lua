@@ -312,6 +312,21 @@ function M.foldexpr()
   return tostring(level)
 end
 
+local foldtext_cache = {}
+local foldtext_cache_group = api.nvim_create_augroup("config_foldtext_cache", { clear = true })
+api.nvim_create_autocmd({ "BufUnload", "BufWipeout" }, {
+  group = foldtext_cache_group,
+  callback = function(event)
+    foldtext_cache[event.buf] = nil
+  end,
+})
+api.nvim_create_autocmd("ColorScheme", {
+  group = foldtext_cache_group,
+  callback = function()
+    foldtext_cache = {}
+  end,
+})
+
 function M.foldtext()
   local bufnr = api.nvim_get_current_buf()
   local start_line = vim.v.foldstart
@@ -330,8 +345,6 @@ function M.foldtext()
     return chunks
   end
 
-  local rows, truncated = signature_rows(start_line, vim.v.foldend)
-  local last_line = fn.getline(rows[#rows])
   local lang = ts.language.get_lang(filetype)
   if not lang then
     return fn.foldtext()
@@ -348,6 +361,40 @@ function M.foldtext()
     return fn.foldtext()
   end
 
+  local tick, width, tabstop = api.nvim_buf_get_changedtick(bufnr), foldtext_width(), vim.bo[bufnr].tabstop
+  local cache = foldtext_cache[bufnr]
+  if
+    not cache
+    or cache.tick ~= tick
+    or cache.width ~= width
+    or cache.tabstop ~= tabstop
+    or cache.vartabstop ~= vim.bo[bufnr].vartabstop
+    or cache.ambiwidth ~= vim.o.ambiwidth
+    or cache.parser ~= parser
+    or cache.query ~= query
+    or cache.filetype ~= filetype
+  then
+    cache = {
+      tick = tick,
+      width = width,
+      tabstop = tabstop,
+      vartabstop = vim.bo[bufnr].vartabstop,
+      ambiwidth = vim.o.ambiwidth,
+      parser = parser,
+      query = query,
+      filetype = filetype,
+      entries = {},
+      count = 0,
+    }
+    foldtext_cache[bufnr] = cache
+  end
+  local key = start_line .. ":" .. vim.v.foldend
+  if cache.entries[key] then
+    return cache.entries[key]
+  end
+
+  local rows, truncated = signature_rows(start_line, vim.v.foldend)
+  local last_line = fn.getline(rows[#rows])
   local parsed, trees = pcall(parser.parse, parser, {
     rows[1] - 1,
     rows[#rows],
@@ -386,10 +433,16 @@ function M.foldtext()
   local regular_suffix = fold_suffix(last_line, truncated and "󱗾" or nil)
   local shortened_suffix = fold_suffix(last_line, "󱗾")
   local suffix_width = math.max(fn.strdisplaywidth(regular_suffix[1][1]), fn.strdisplaywidth(shortened_suffix[1][1]))
-  local visible, width_truncated = truncate_chunks(result, foldtext_width() - suffix_width)
+  local visible, width_truncated = truncate_chunks(result, width - suffix_width)
 
   vim.list_extend(visible, width_truncated and shortened_suffix or regular_suffix)
 
+  -- Bound memory even when a buffer contains thousands of closed folds.
+  if cache.count >= 256 then
+    cache.entries, cache.count = {}, 0
+  end
+  cache.entries[key] = visible
+  cache.count = cache.count + 1
   return visible
 end
 
@@ -469,54 +522,7 @@ M.set_terminal_keymaps = function()
   map("t", "<C-l>", [[<C-\><C-n><C-W>l]], opts)
 end
 
-M.kind_icons = {
-  Array = "",
-  Boolean = "󰨙",
-  Class = "",
-  Codeium = "󰘦",
-  Color = "",
-  Control = "",
-  Collapsed = "",
-  Constant = "󰏿",
-  Constructor = "",
-  Copilot = "",
-  Enum = "ℰ",
-  EnumMember = "",
-  Event = "",
-  Field = "󰜢",
-  File = "󰈚",
-  Folder = "",
-  Function = "󰊕",
-  Interface = " ",
-  Implementation = "",
-  Key = "",
-  Keyword = "",
-  Macro = " 󰁌 ",
-  Method = "ƒ",
-  Module = "",
-  Namespace = "󰦮",
-  Null = "",
-  Number = "󰎠",
-  Object = "",
-  Operator = "",
-  Package = "",
-  Parameter = "",
-  Property = "",
-  Reference = "",
-  Snippet = "", --" ",""," ","󱄽 "
-  Spell = "󰓆",
-  StaticMethod = "",
-  String = "󰅳", -- " ","𝓐 " ," " ,"󰅳 "  
-  Struct = "󰙅", -- "  "
-  Supermaven = "",
-  TabNine = "󰏚",
-  Text = "󰉿",
-  TypeAlias = "",
-  TypeParameter = "",
-  Unit = "󰑭",
-  Value = "",
-  Variable = "󰆦",
-}
+M.kind_icons = require("config.icons").kinds
 
 M.is_mcp_present = function()
   return M.is_online() and vim.uv.fs_stat(fn.expand("~/.mcpservers.json")) ~= nil

@@ -8,45 +8,37 @@ return {
       "abzcoding/neotest-gtest",
     },
     lazy = true,
-    config = function()
-      local opts = {
-        adapters = {
-          require("rustaceanvim.neotest"),
-          require("neotest-gtest").setup({
-            root = function(file)
-              return require("neotest.lib").files.match_root_pattern(
-                "CMakePresets.json",
-                "compile_commands.json",
-                ".git"
-              )(file)
-            end,
-            is_test_file = function(file)
-              local name = vim.fs.basename(file)
-              return name:match("^test_.*%.[cC][pP][pP]$") ~= nil or name:match(".*_test%.[cC][pP][pP]$") ~= nil
-            end,
-            filter_dir = function(name)
-              return name ~= "build" and name ~= ".git" and name ~= ".cache" and name ~= "_deps"
-            end,
-            debug_adapter = "codelldb",
-          }),
+    opts = {
+      adapters = {
+        ["rustaceanvim.neotest"] = {},
+        ["neotest-gtest"] = {
+          root = function(file)
+            return require("neotest.lib").files.match_root_pattern("CMakePresets.json", "compile_commands.json", ".git")(
+              file
+            )
+          end,
+          is_test_file = function(file)
+            local name = vim.fs.basename(file)
+            return name:match("^test_.*%.[cC][pP][pP]$") ~= nil or name:match(".*_test%.[cC][pP][pP]$") ~= nil
+          end,
+          filter_dir = function(name)
+            return name ~= "build" and name ~= ".git" and name ~= ".cache" and name ~= "_deps"
+          end,
+          debug_adapter = "codelldb",
         },
-        quickfix = {
-          enabled = false,
-        },
-        status = { virtual_text = true },
-        output = {
-          enabled = true,
-          open_on_run = false,
-        },
-        output_panel = {
-          enabled = false,
-        },
-        consumers = {
-          overseer = require("neotest.consumers.overseer"),
-        },
-      }
-      require("neotest").setup(opts)
-    end,
+      },
+      quickfix = {
+        enabled = false,
+      },
+      status = { virtual_text = true },
+      output = {
+        enabled = true,
+        open_on_run = false,
+      },
+      output_panel = {
+        enabled = false,
+      },
+    },
     -- stylua: ignore
     keys = {
       {"<leader>t", "", desc = "+test"},

@@ -1,6 +1,13 @@
 local map = vim.keymap.set
 local opts = { noremap = true, silent = true }
 
+map({ "n", "x" }, "<C-n>", function()
+  vim.treesitter.select("parent", vim.v.count1)
+end, { desc = "Expand syntax selection" })
+map("x", "<BS>", function()
+  vim.treesitter.select("child", vim.v.count1)
+end, { desc = "Shrink syntax selection" })
+
 map("n", "<leader>aE", function()
   local utils = require("config.utils")
   if not utils.is_online() then

@@ -1,9 +1,4 @@
-local icons = {
-  error = " ",
-  warn = " ",
-  info = "",
-  hint = " ",
-}
+local icons = require("config.icons").diagnostics
 
 return {
   "neovim/nvim-lspconfig",
@@ -18,25 +13,18 @@ return {
       { "gI", "<cmd>Trouble lsp_implementations<cr>", desc = "Goto Implementation", nowait = true },
       { "gy", "<cmd>Trouble lsp_type_definitions<cr>", desc = "Goto T[y]pe Definition", nowait = true },
     })
-    opts.diagnostics = {
+    opts.diagnostics = vim.tbl_deep_extend("force", opts.diagnostics or {}, {
       virtual_text = false,
       underline = false,
       signs = {
-        active = true,
         text = {
-          [vim.diagnostic.severity.ERROR] = icons.error,
-          [vim.diagnostic.severity.WARN] = icons.warn,
-          [vim.diagnostic.severity.INFO] = icons.info,
-          [vim.diagnostic.severity.HINT] = icons.hint,
-        },
-        values = {
-          { name = "DiagnosticSignError", text = icons.error },
-          { name = "DiagnosticSignWarn", text = icons.warn },
-          { name = "DiagnosticSignInfo", text = icons.info },
-          { name = "DiagnosticSignHint", text = icons.hint },
+          [vim.diagnostic.severity.ERROR] = icons.Error,
+          [vim.diagnostic.severity.WARN] = icons.Warn,
+          [vim.diagnostic.severity.INFO] = icons.Info,
+          [vim.diagnostic.severity.HINT] = icons.Hint,
         },
       },
-    }
+    })
     opts.codelens = {
       enabled = false,
     }

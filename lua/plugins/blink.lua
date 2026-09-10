@@ -132,7 +132,7 @@ return {
     local icons = require("config.utils").kind_icons
     opts.appearance = {
       use_nvim_cmp_as_default = false,
-      nerd_font_variant = "normal",
+      nerd_font_variant = vim.g.nerd_font_variant or (vim.env.KITTY_WINDOW_ID and "mono" or "normal"),
       kind_icons = icons,
     }
   end,

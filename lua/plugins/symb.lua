@@ -8,11 +8,11 @@ return {
   config = function()
     local api = vim.api
     local function get_highlights()
-      local cursorline_bg = api.nvim_get_hl(0, { name = "CursorLine" }).bg
-      local comment_fg = api.nvim_get_hl(0, { name = "Comment" }).fg
-      local function_fg = api.nvim_get_hl(0, { name = "Function" }).fg
-      local type_fg = api.nvim_get_hl(0, { name = "Type" }).fg
-      local keyword_fg = api.nvim_get_hl(0, { name = "@keyword" }).fg
+      local cursorline_bg = api.nvim_get_hl(0, { name = "CursorLine", link = false }).bg
+      local comment_fg = api.nvim_get_hl(0, { name = "Comment", link = false }).fg
+      local function_fg = api.nvim_get_hl(0, { name = "Function", link = false }).fg
+      local type_fg = api.nvim_get_hl(0, { name = "Type", link = false }).fg
+      local keyword_fg = api.nvim_get_hl(0, { name = "@keyword", link = false }).fg
       return {
         cursorline_bg = cursorline_bg,
         comment_fg = comment_fg,
@@ -21,17 +21,24 @@ return {
         keyword_fg = keyword_fg,
       }
     end
-    local hl = get_highlights()
-    local highlights = {
-      { name = "SymbolUsageRounding", attrs = { fg = hl.cursorline_bg, italic = true } },
-      { name = "SymbolUsageContent", attrs = { bg = hl.cursorline_bg, fg = hl.comment_fg, italic = true } },
-      { name = "SymbolUsageRef", attrs = { fg = hl.function_fg, bg = hl.cursorline_bg, italic = true } },
-      { name = "SymbolUsageDef", attrs = { fg = hl.type_fg, bg = hl.cursorline_bg, italic = true } },
-      { name = "SymbolUsageImpl", attrs = { fg = hl.keyword_fg, bg = hl.cursorline_bg, italic = true } },
-    }
-    for _, highlight in ipairs(highlights) do
-      api.nvim_set_hl(0, highlight.name, highlight.attrs)
+    local function apply_highlights()
+      local hl = get_highlights()
+      local highlights = {
+        { name = "SymbolUsageRounding", attrs = { fg = hl.cursorline_bg, italic = true } },
+        { name = "SymbolUsageContent", attrs = { bg = hl.cursorline_bg, fg = hl.comment_fg, italic = true } },
+        { name = "SymbolUsageRef", attrs = { fg = hl.function_fg, bg = hl.cursorline_bg, italic = true } },
+        { name = "SymbolUsageDef", attrs = { fg = hl.type_fg, bg = hl.cursorline_bg, italic = true } },
+        { name = "SymbolUsageImpl", attrs = { fg = hl.keyword_fg, bg = hl.cursorline_bg, italic = true } },
+      }
+      for _, highlight in ipairs(highlights) do
+        api.nvim_set_hl(0, highlight.name, highlight.attrs)
+      end
     end
+    apply_highlights()
+    api.nvim_create_autocmd("ColorScheme", {
+      group = api.nvim_create_augroup("config_symbol_usage_theme", { clear = true }),
+      callback = apply_highlights,
+    })
 
     local static_elements = {
       round_start = { "", "SymbolUsageRounding" },

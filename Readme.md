@@ -114,6 +114,8 @@ Avante's RAG service is disabled by default. Its optional RAG and web-search int
 | `:Lint`            | Run the configured linter for the current buffer |
 | `:LintTerraform`   | Run Terraform validation and TFLint manually     |
 | `:LintTrivy`       | Run Trivy manually                               |
+| `<C-n>`            | Start or expand syntax selection (normal/visual) |
+| `<BS>`             | Shrink syntax selection (visual mode)            |
 
 LazyVim provides most of the remaining mappings. Press `<leader>` and follow the WhichKey labels to discover them.
 

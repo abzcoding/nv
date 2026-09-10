@@ -1,7 +1,7 @@
 return {
   "stevearc/conform.nvim",
-  opts = function()
-    local opts = {
+  opts = function(_, opts)
+    return vim.tbl_deep_extend("force", opts, {
       default_format_opts = {
         timeout_ms = 3000,
         async = false,
@@ -9,7 +9,7 @@ return {
         lsp_format = "fallback",
       },
       formatters_by_ft = {
-        bash = { "shfmt" },
+        sh = { "shfmt" },
         css = { "prettierd" },
         dependabot = { "yamlfmt" },
         fish = { "fish_indent" },
@@ -27,7 +27,6 @@ return {
             return { "isort", "black" }
           end
         end,
-        shell = { "shfmt" },
         typescript = { "prettierd" },
         typescriptreact = { "prettierd" },
         yaml = { "yamlfmt" },
@@ -50,7 +49,6 @@ return {
           },
         },
       },
-    }
-    return opts
+    })
   end,
 }

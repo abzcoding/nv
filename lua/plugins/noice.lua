@@ -1,6 +1,9 @@
 return {
   "folke/noice.nvim",
   opts = {
+    lsp = {
+      signature = { enabled = false }, -- Blink owns automatic signature help.
+    },
     presets = {
       lsp_doc_border = false,
     },

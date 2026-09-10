@@ -60,6 +60,19 @@ opt.autoread = true -- reload externally changed files (0.13: fs watchers, realt
 global.editorconfig = true
 global.lazyvim_blink_main = true
 opt.backupskip = "/tmp/*,$TMPDIR/*,$TMP/*,$TEMP/*,*/shm/*,/private/var/*,.vault.vim"
+opt.backupskip:append({
+  ".env",
+  ".env.*",
+  "*.pem",
+  "*.key",
+  "*.p12",
+  "*.pfx",
+  "*.tfvars",
+  ".npmrc",
+  ".pypirc",
+  "*credentials*",
+  "*secret*",
+})
 opt.ignorecase = true -- Case insensitive search
 opt.smartcase = true -- Case sensitive when uppercase
 opt.undofile = true -- Enable undo file
