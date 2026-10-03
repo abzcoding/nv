@@ -1,4 +1,4 @@
-local opt = vim.opt
+local opt = vim.o
 local global = vim.g
 local cmd = vim.cmd
 
@@ -46,6 +46,7 @@ opt.listchars = { tab = "  " }
 -- default options
 opt.ttyfast = true
 opt.termguicolors = true
+opt.guicursor = ""
 opt.updatetime = 100
 opt.timeoutlen = 250
 opt.redrawtime = 1500
@@ -59,27 +60,15 @@ opt.autowriteall = true -- automatically :write before running commands and chan
 opt.autoread = true -- reload externally changed files (0.13: fs watchers, realtime)
 global.editorconfig = true
 global.lazyvim_blink_main = true
-opt.backupskip = "/tmp/*,$TMPDIR/*,$TMP/*,$TEMP/*,*/shm/*,/private/var/*,.vault.vim"
-opt.backupskip:append({
-  ".env",
-  ".env.*",
-  "*.pem",
-  "*.key",
-  "*.p12",
-  "*.pfx",
-  "*.tfvars",
-  ".npmrc",
-  ".pypirc",
-  "*credentials*",
-  "*secret*",
-})
+vim.opt.backupskip =
+  "/tmp/*,$TMPDIR/*,$TMP/*,$TEMP/*,*/shm/*,/private/var/*,.vault.vim,.env,.env.*,*.pem,*.key,*.p12,*.pfx,*.tfvars,.npmrc,.pypirc,*credentials*,*secret*"
 opt.ignorecase = true -- Case insensitive search
 opt.smartcase = true -- Case sensitive when uppercase
 opt.undofile = true -- Enable undo file
 opt.swapfile = false -- Disable swap file
 opt.showmode = false
-opt.iskeyword:append("-") -- Treat words separated by - as one word
-opt.clipboard:append("unnamedplus") -- Enable copying to system clipboard
+vim.opt.iskeyword:append("-") -- Treat words separated by - as one word
+vim.opt.clipboard:append("unnamedplus") -- Enable copying to system clipboard
 opt.fillchars = {
   fold = " ",
   eob = " ", -- suppress ~ at EndOfBuffer
