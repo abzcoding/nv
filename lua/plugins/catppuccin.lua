@@ -53,13 +53,17 @@ return {
     custom_highlights = function(c)
       local bg_alt = "#242438"
       local bg = "#161621"
-      return {
-        BlinkCmpDocBorder = { fg = c.blue },
+      local highlights = {
+        BlinkCmpDoc = { fg = c.text, bg = bg },
+        BlinkCmpDocBorder = { fg = bg, bg = bg },
         BlinkCmpKind = { fg = c.blue },
-        BlinkCmpMenu = { fg = c.text },
-        BlinkCmpMenuBorder = { fg = c.blue },
+        BlinkCmpMenu = { fg = c.text, bg = bg },
+        BlinkCmpMenuBorder = { fg = bg, bg = bg },
+        BlinkCmpMenuSelection = { bg = bg_alt, bold = true },
+        BlinkCmpScrollBarGutter = { bg = bg },
+        BlinkCmpSignatureHelp = { fg = c.text, bg = bg },
         BlinkCmpSignatureHelpActiveParameter = { fg = c.mauve },
-        BlinkCmpSignatureHelpBorder = { fg = c.blue },
+        BlinkCmpSignatureHelpBorder = { fg = bg, bg = bg },
         ColorColumn = { bg = c.mantle },
         Cursor = { fg = c.base, bg = "#d9e0ee" },
         Folded = { fg = c.lavender, bg = c.dim },
@@ -92,6 +96,21 @@ return {
         rainbow5 = { fg = c.sapphire, bg = "#302D41" },
         rainbow6 = { fg = c.lavender, bg = "#302D41" },
       }
+      local blend = require("catppuccin.utils.colors").blend
+      local diagnostics = {
+        Error = c.red,
+        Warn = blend(c.peach, c.yellow, 0.6),
+        Info = c.blue,
+        Hint = blend(c.teal, c.overlay1, 0.6),
+      }
+      for severity, color in pairs(diagnostics) do
+        for _, prefix in ipairs({ "Diagnostic", "DiagnosticSign", "DiagnosticFloating" }) do
+          highlights[prefix .. severity] = { fg = color }
+        end
+        highlights["DiagnosticVirtualText" .. severity] = { fg = color, bg = blend(color, c.base, 0.095) }
+        highlights["DiagnosticUnderline" .. severity] = { sp = color }
+      end
+      return highlights
     end,
   },
 }

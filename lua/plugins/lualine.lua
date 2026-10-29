@@ -172,6 +172,27 @@ return {
     "nvim-lualine/lualine.nvim",
     event = "VeryLazy",
     config = function()
+      if vim.env.TMUX then
+        local nvim_opts = require("lualine.utils.nvim_opts")
+        local base_set = nvim_opts.set
+        nvim_opts.set = function(name, val, scope)
+          if name == "laststatus" then
+            return base_set(name, 0, scope)
+          end
+          if name == "statusline" then
+            if scope and scope.window == vim_api.nvim_get_current_win() then
+              -- Keep an empty render from falling back to Neovim's statusline.
+              vim.g.tpipeline_statusline = val or "%#StatusLine#"
+              if vim.g.tpipeline_hooks_enabled == 1 then
+                vim.fn["tpipeline#update"]()
+              end
+            end
+            return
+          end
+          return base_set(name, val, scope)
+        end
+      end
+
       local function setup()
         local colors, modecolor, scrollbar = theme_components()
         local diagnostic_icons = require("config.icons").diagnostics
@@ -454,36 +475,24 @@ return {
         group = vim_api.nvim_create_augroup("config_lualine_theme", { clear = true }),
         callback = vim.schedule_wrap(setup),
       })
-
-      local lualine_nvim_opts = require("lualine.utils.nvim_opts")
-      local base_set = lualine_nvim_opts.set
-
-      lualine_nvim_opts.set = function(name, val, scope)
-        if vim.env.TMUX and name == "statusline" then
-          if scope and scope.window == vim_api.nvim_get_current_win() then
-            vim.g.tpipeline_statusline = val
-            vim.cmd("silent! call tpipeline#update()")
-          end
-          return
-        end
-        return base_set(name, val, scope)
-      end
     end,
   },
   {
     "vimpostor/vim-tpipeline",
-    dependencies = { "nvim-lualine/lualine.nvim" },
-    event = "VeryLazy",
+    -- Initialize before VimEnter so config runs before the first bridge update.
+    lazy = false,
     enabled = vim.env.TMUX ~= nil,
+    init = function()
+      -- The lualine bridge above owns updates; skip tpipeline's competing hooks.
+      vim.g.tpipeline_statusline = "%#StatusLine#"
+    end,
     config = function()
+      -- Neovim 0.13 rejects tpipeline's default control character as a fillchar.
+      -- Set this before tpipeline.main caches its padding pattern on first use.
+      vim.g.tpipeline_fillchar = " "
       vim.opt.cmdheight = 0
       vim.opt.laststatus = 0
       vim.g.tpipeline_cursormoved = 1
-      -- vim.g.tpipeline_clearstl = 1
-      -- HACK: lualine hijacks the statusline, so we need to set it back to what we want
-      -- if vim.env.TMUX then
-      --   vim.cmd([[ autocmd WinEnter,BufEnter,VimResized,Filetype * setlocal laststatus=0 ]])
-      -- end
     end,
   },
 }

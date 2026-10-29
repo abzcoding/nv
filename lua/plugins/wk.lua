@@ -1,6 +1,23 @@
 return {
   "folke/which-key.nvim",
   opts = {
+    preset = "helix",
+    win = {
+      border = "none",
+      padding = { 1, 2 },
+      title = false,
+      wo = {
+        winblend = 0,
+        winhighlight = "Normal:Normal,NormalFloat:Normal,FloatBorder:Normal",
+      },
+    },
+    layout = {
+      width = { min = 20, max = 40 },
+      spacing = 3,
+    },
+    delay = 500,
+    show_help = false,
+    show_keys = false,
     spec = {
       { "<leader>a", group = "AI", icon = " " },
       { "<leader>1", hidden = true },
@@ -9,6 +26,15 @@ return {
       { "<leader>4", hidden = true },
       { "<leader>5", hidden = true },
       { "<leader>6", hidden = true },
+      { "<leader>l", hidden = true },
+      { "<leader>L", hidden = true },
+      { "<leader>K", hidden = true },
+      { "<leader>n", hidden = true },
+      { "<leader>S", hidden = true },
+      { "<leader>.", hidden = true },
+      { "<leader>y", hidden = true },
+      { "<leader>?", hidden = true },
+      { "<leader>E", hidden = true },
     },
     icons = {
       rules = {

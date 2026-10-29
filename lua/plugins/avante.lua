@@ -116,6 +116,8 @@ return {
       "AvanteToggle",
     },
     version = false,
+    -- Last revision before mega.cmdparse became a required dependency.
+    commit = "34fefab79ac2bcf8430f40eca278f6ce55eea62a",
     enabled = is_online,
     opts = function()
       local opts = {
