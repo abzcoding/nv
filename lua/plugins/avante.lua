@@ -149,7 +149,7 @@ return {
           },
           copilot = {
             endpoint = "https://api.githubcopilot.com",
-            model = "gpt-5.3-codex",
+            model = "gpt-6.1-terra",
             -- model = "gpt-5",
             proxy = nil,
             allow_insecure = false,
